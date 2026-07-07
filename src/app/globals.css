@@ -1,26 +1,58 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-background: #FDFBF7;
+  --color-foreground: #2C2523;
+  
+  --color-primary: #E0A996;
+  --color-primary-hover: #CF9581;
+  --color-accent: #96A288;
+  --color-accent-hover: #818D74;
+  
+  --color-rose: #E4A0A0;
+  --color-espresso: #2C2523;
+  --color-espresso-light: #4A3728;
+  --color-cream: #FDFBF7;
+  --color-beige: #F5EFEB;
+  
+  --font-serif: var(--font-serif);
+  --font-sans: var(--font-sans);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Custom global styles */
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+h1, h2, h3, h4, .font-heading {
+  font-family: var(--font-serif);
+}
+
+/* Add custom animations/transitions for a premium feel */
+.hover-lift {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(44, 37, 35, 0.08), 0 8px 10px -6px rgba(44, 37, 35, 0.08);
+}
+
+/* Floating chat bubble pulse */
+@keyframes pulse-slow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(150, 162, 136, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(150, 162, 136, 0);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.chat-bubble-pulse {
+  animation: pulse-slow 3s infinite;
 }
