@@ -37,7 +37,6 @@ export default function AdminRolesPage() {
 
   useEffect(() => {
     if (!isSuperAdmin) {
-      setLoading(false);
       return;
     }
 
@@ -110,9 +109,12 @@ export default function AdminRolesPage() {
           <ShieldAlert className="w-8 h-8" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-xl font-bold text-[#2C2523] font-serif">Access Denied</h2>
+          <h2 className="text-xl font-bold text-[#2C2523] font-serif">
+            Access Denied
+          </h2>
           <p className="text-xs text-[#4A3728] leading-relaxed">
-            Only Super Admins can configure role permissions for customers, editors, and admins.
+            Only Super Admins can configure role permissions for customers,
+            editors, and admins.
           </p>
         </div>
       </div>
@@ -123,9 +125,12 @@ export default function AdminRolesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-[#2C2523] font-serif">Roles & Permissions</h2>
+          <h2 className="text-2xl font-bold text-[#2C2523] font-serif">
+            Roles & Permissions
+          </h2>
           <p className="text-xs text-[#A0958F]">
-            Configure what each user group — customers, editors, admins — is allowed to do.
+            Configure what each user group — customers, editors, admins — is
+            allowed to do.
           </p>
         </div>
         <button
@@ -133,7 +138,11 @@ export default function AdminRolesPage() {
           disabled={saving || loading}
           className="py-2.5 px-5 bg-[#E0A996] hover:bg-[#CF9581] text-[#2C2523] font-semibold rounded-xl text-xs flex items-center gap-2 cursor-pointer transition-colors shadow-xxs disabled:opacity-75"
         >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {saving ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4" />
+          )}
           Save Permissions
         </button>
       </div>
@@ -181,7 +190,9 @@ export default function AdminRolesPage() {
                         {roleKey}
                       </span>
                     </h3>
-                    <p className="text-xxs text-[#A0958F]">{role?.description}</p>
+                    <p className="text-xxs text-[#A0958F]">
+                      {role?.description}
+                    </p>
                   </div>
                   {isLocked && (
                     <span className="ml-auto text-[10px] font-bold text-[#A0958F] bg-[#F5EFEB] px-2 py-1 rounded-full">
@@ -193,7 +204,8 @@ export default function AdminRolesPage() {
                 <div className="p-6">
                   {roleKey === "USER" ? (
                     <p className="text-xs text-[#4A3728]">
-                      Customers browse the store and place orders. Admin permissions do not apply to this group.
+                      Customers browse the store and place orders. Admin
+                      permissions do not apply to this group.
                     </p>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -208,22 +220,26 @@ export default function AdminRolesPage() {
                               disabled
                                 ? "border-[#F5EFEB] bg-[#FDFBF7] opacity-75 cursor-not-allowed"
                                 : checked
-                                ? "border-[#E0A996] bg-[#E0A996]/5 cursor-pointer"
-                                : "border-[#EBE5E0] bg-white hover:border-[#A0958F] cursor-pointer"
+                                  ? "border-[#E0A996] bg-[#E0A996]/5 cursor-pointer"
+                                  : "border-[#EBE5E0] bg-white hover:border-[#A0958F] cursor-pointer"
                             }`}
                           >
                             <input
                               type="checkbox"
                               checked={checked}
                               disabled={disabled}
-                              onChange={() => togglePermission(roleKey, perm.key)}
+                              onChange={() =>
+                                togglePermission(roleKey, perm.key)
+                              }
                               className="mt-0.5 w-4 h-4 rounded border-[#EBE5E0] text-[#E0A996] focus:ring-[#E0A996]"
                             />
                             <div>
                               <span className="text-xs font-semibold text-[#2C2523] block">
                                 {perm.label}
                               </span>
-                              <span className="text-xxs text-[#A0958F]">{perm.description}</span>
+                              <span className="text-xxs text-[#A0958F]">
+                                {perm.description}
+                              </span>
                             </div>
                           </label>
                         );

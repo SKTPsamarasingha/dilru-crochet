@@ -1,26 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Plus, 
-  Search, 
-  Edit3, 
-  Trash2, 
-  Loader2, 
-  X, 
-  Save, 
-  AlertCircle, 
-  Check, 
-  Scissors, 
-  Package 
+import {
+  Plus,
+  Edit3,
+  Trash2,
+  Loader2,
+  X,
+  Save,
+  AlertCircle,
+  Check,
+  Scissors,
+  Package,
 } from "lucide-react";
+import AdminSearchFilterBar from "@/components/AdminSearchFilterBar";
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
-  
+
   // Search & Filters
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
@@ -58,7 +58,13 @@ export default function AdminProductsPage() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    const timeoutId = window.setTimeout(() => {
+      void fetchProducts();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   const openAddForm = () => {
@@ -105,24 +111,28 @@ export default function AdminProductsPage() {
       category: category.trim(),
       image: image.trim() || undefined,
       stock: parseInt(stock) || 0,
-      customizable: !!customizable
+      customizable: !!customizable,
     };
 
     try {
-      const url = editingProduct 
-        ? `/api/products/${editingProduct.id}` 
+      const url = editingProduct
+        ? `/api/products/${editingProduct.id}`
         : "/api/products";
       const method = editingProduct ? "PUT" : "POST";
 
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (data.success) {
-        setSuccessMsg(editingProduct ? "Product updated successfully!" : "Product created successfully!");
+        setSuccessMsg(
+          editingProduct
+            ? "Product updated successfully!"
+            : "Product created successfully!",
+        );
         setIsFormOpen(false);
         fetchProducts();
         setTimeout(() => setSuccessMsg(""), 3000);
@@ -141,7 +151,7 @@ export default function AdminProductsPage() {
 
     try {
       const res = await fetch(`/api/products/${productId}`, {
-        method: "DELETE"
+        method: "DELETE",
       });
       const data = await res.json();
       if (data.success) {
@@ -158,9 +168,11 @@ export default function AdminProductsPage() {
 
   // Filter & Search Logic
   const filteredProducts = products.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
-                          p.category.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = activeCategory === "All" || p.category === activeCategory;
+    const matchesSearch =
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.category.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory =
+      activeCategory === "All" || p.category === activeCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -171,8 +183,12 @@ export default function AdminProductsPage() {
       {/* 1. Header Area */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-[#2C2523] font-serif">Product Catalog</h2>
-          <p className="text-xs text-[#A0958F]">Create and modify your handcrafted boutique listings.</p>
+          <h2 className="text-2xl font-bold text-[#2C2523] font-serif">
+            Product Catalog
+          </h2>
+          <p className="text-xs text-[#A0958F]">
+            Create and modify your handcrafted boutique listings.
+          </p>
         </div>
         <button
           onClick={openAddForm}
@@ -191,36 +207,26 @@ export default function AdminProductsPage() {
       )}
 
       {/* 3. Search and Filtering bar */}
-      <div className="bg-white p-4 border border-[#FBEFEA] rounded-2xl shadow-xxs flex flex-col md:flex-row gap-4 justify-between items-center">
-        {/* Search */}
-        <div className="relative w-full md:max-w-xs">
-          <input
-            type="text"
-            placeholder="Search products..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#FDFBF7] border border-[#EBE5E0] text-xs text-[#2C2523] placeholder-[#A0958F] rounded-xl focus:outline-none focus:border-[#E0A996] transition-all"
-          />
-          <Search className="absolute left-3 top-3 w-4 h-4 text-[#A0958F]" />
-        </div>
-
-        {/* Category Tabs */}
-        <div className="flex flex-wrap gap-2 w-full md:w-auto">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`py-1.5 px-3.5 rounded-lg text-xxs font-bold transition-all cursor-pointer ${
-                activeCategory === cat
-                  ? "bg-[#E0A996] text-[#2C2523]"
-                  : "bg-[#FDFBF7] border border-[#EBE5E0] text-[#4A3728] hover:border-[#A0958F]"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
+      <AdminSearchFilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        placeholder="Search products..."
+        summary={`${filteredProducts.length} product${filteredProducts.length === 1 ? "" : "s"}`}
+      >
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setActiveCategory(cat)}
+            className={`py-1.5 px-3.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+              activeCategory === cat
+                ? "bg-[#E0A996] text-[#2C2523]"
+                : "bg-[#FDFBF7] border border-[#EBE5E0] text-[#4A3728] hover:border-[#A0958F]"
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </AdminSearchFilterBar>
 
       {/* 4. Products Listing */}
       {loading ? (
@@ -248,12 +254,19 @@ export default function AdminProductsPage() {
               </thead>
               <tbody className="divide-y divide-[#F5EFEB] text-xs text-[#4A3728]">
                 {filteredProducts.map((p) => (
-                  <tr key={p.id} className="hover:bg-[#FDFBF7]/50 transition-colors">
+                  <tr
+                    key={p.id}
+                    className="hover:bg-[#FDFBF7]/50 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-[#F5EFEB] overflow-hidden flex-shrink-0 border border-[#EBE5E0]">
                           {p.image ? (
-                            <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                            <img
+                              src={p.image}
+                              alt={p.name}
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <Package className="w-4 h-4 text-[#A0958F]" />
@@ -261,9 +274,13 @@ export default function AdminProductsPage() {
                           )}
                         </div>
                         <div>
-                          <div className="font-semibold text-[#2C2523] font-serif">{p.name}</div>
+                          <div className="font-semibold text-[#2C2523] font-serif">
+                            {p.name}
+                          </div>
                           {p.description && (
-                            <div className="text-xxs text-[#A0958F] line-clamp-1 max-w-[200px]">{p.description}</div>
+                            <div className="text-xxs text-[#A0958F] line-clamp-1 max-w-[200px]">
+                              {p.description}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -336,9 +353,13 @@ export default function AdminProductsPage() {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-[#2C2523] font-serif">
-                  {editingProduct ? "Edit Crochet Creation" : "New Crochet Creation"}
+                  {editingProduct
+                    ? "Edit Crochet Creation"
+                    : "New Crochet Creation"}
                 </h3>
-                <p className="text-xxs text-[#A0958F]">Specify details and features for this item.</p>
+                <p className="text-xxs text-[#A0958F]">
+                  Specify details and features for this item.
+                </p>
               </div>
             </div>
 
@@ -352,7 +373,9 @@ export default function AdminProductsPage() {
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">Product Name</label>
+                  <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">
+                    Product Name
+                  </label>
                   <input
                     type="text"
                     required
@@ -364,7 +387,9 @@ export default function AdminProductsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">Price ($)</label>
+                  <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">
+                    Price ($)
+                  </label>
                   <input
                     type="number"
                     step="0.01"
@@ -377,7 +402,9 @@ export default function AdminProductsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">Stock Count</label>
+                  <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">
+                    Stock Count
+                  </label>
                   <input
                     type="number"
                     required
@@ -389,7 +416,9 @@ export default function AdminProductsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">Category</label>
+                  <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">
+                    Category
+                  </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
@@ -410,13 +439,18 @@ export default function AdminProductsPage() {
                     onChange={(e) => setCustomizable(e.target.checked)}
                     className="w-4 h-4 border-[#EBE5E0] text-[#E0A996] rounded focus:ring-[#E0A996]"
                   />
-                  <label htmlFor="customizable" className="text-xxs font-bold text-[#2C2523] uppercase select-none">
+                  <label
+                    htmlFor="customizable"
+                    className="text-xxs font-bold text-[#2C2523] uppercase select-none"
+                  >
                     Customizable Item
                   </label>
                 </div>
 
                 <div className="col-span-2">
-                  <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">Image URL</label>
+                  <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">
+                    Image URL
+                  </label>
                   <input
                     type="text"
                     value={image}
@@ -427,7 +461,9 @@ export default function AdminProductsPage() {
                 </div>
 
                 <div className="col-span-2">
-                  <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">Description</label>
+                  <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">
+                    Description
+                  </label>
                   <textarea
                     rows="3"
                     value={description}

@@ -1,49 +1,72 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #FDFBF7;
-  --color-foreground: #2C2523;
-  
-  --color-primary: #E0A996;
-  --color-primary-hover: #CF9581;
-  --color-accent: #96A288;
-  --color-accent-hover: #818D74;
-  
-  --color-rose: #E4A0A0;
-  --color-espresso: #2C2523;
-  --color-espresso-light: #4A3728;
-  --color-cream: #FDFBF7;
-  --color-beige: #F5EFEB;
-  
+  --color-background: #fdfbf7;
+  --color-foreground: #2c2523;
+
+  --color-primary: #e0a996;
+  --color-primary-hover: #cf9581;
+  --color-accent: #96a288;
+  --color-accent-hover: #818d74;
+
+  --color-rose: #e4a0a0;
+  --color-espresso: #2c2523;
+  --color-espresso-light: #4a3728;
+  --color-cream: #fdfbf7;
+  --color-beige: #f5efeb;
+
   --font-serif: var(--font-serif);
   --font-sans: var(--font-sans);
 }
 
-/* Custom global styles */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
   min-height: 100vh;
 }
 
-h1, h2, h3, h4, .font-heading {
+::selection {
+  background-color: rgba(224, 169, 150, 0.35);
+  color: var(--color-espresso);
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-heading {
   font-family: var(--font-serif);
 }
 
-/* Add custom animations/transitions for a premium feel */
+@media (max-width: 640px) {
+  body {
+    font-size: 15px;
+  }
+}
+
 .hover-lift {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s ease;
 }
 
 .hover-lift:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 25px -5px rgba(44, 37, 35, 0.08), 0 8px 10px -6px rgba(44, 37, 35, 0.08);
+  box-shadow:
+    0 10px 25px -5px rgba(44, 37, 35, 0.08),
+    0 8px 10px -6px rgba(44, 37, 35, 0.08);
 }
 
-/* Floating chat bubble pulse */
 @keyframes pulse-slow {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(150, 162, 136, 0.4);
   }
@@ -55,4 +78,52 @@ h1, h2, h3, h4, .font-heading {
 
 .chat-bubble-pulse {
   animation: pulse-slow 3s infinite;
+}
+
+body {
+  background-image:
+    radial-gradient(
+      circle at top left,
+      rgba(224, 169, 150, 0.14),
+      transparent 34%
+    ),
+    linear-gradient(135deg, #fdfbf7 0%, #fcf5ee 100%);
+  background-attachment: fixed;
+}
+
+.boutique-card {
+  border: 1px solid rgba(224, 169, 150, 0.24);
+  background: linear-gradient(145deg, #fffdf9 0%, #fcf6ef 100%);
+  box-shadow: 0 20px 45px -24px rgba(44, 37, 35, 0.24);
+}
+
+.boutique-badge {
+  border: 1px solid rgba(224, 169, 150, 0.3);
+  background: rgba(255, 250, 245, 0.9);
+  box-shadow: 0 10px 25px -16px rgba(44, 37, 35, 0.2);
+}
+
+.hero-ornament {
+  position: absolute;
+  inset: auto auto -2rem -2rem;
+  width: 10rem;
+  height: 10rem;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    rgba(224, 169, 150, 0.25),
+    transparent 70%
+  );
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+.section-shell {
+  border: 1px solid rgba(224, 169, 150, 0.16);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 251, 247, 0.96),
+    rgba(248, 239, 232, 0.88)
+  );
+  box-shadow: 0 16px 40px -24px rgba(44, 37, 35, 0.18);
 }

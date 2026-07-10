@@ -15,7 +15,7 @@ import {
   Menu,
   X,
   Heart,
-  User
+  User,
 } from "lucide-react";
 
 export default function AdminLayoutClient({ children }) {
@@ -29,7 +29,7 @@ export default function AdminLayoutClient({ children }) {
     { name: "Products", href: "/admin/products", icon: ShoppingBag },
     { name: "Orders", href: "/admin/orders", icon: Receipt },
     { name: "Customers", href: "/admin/customers", icon: Users },
-    { name: "Settings", href: "/admin/settings", icon: Settings }
+    { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
 
   const handleSignOut = async () => {
@@ -45,7 +45,9 @@ export default function AdminLayoutClient({ children }) {
         <div className="h-20 flex items-center px-6 border-b border-[#F5EFEB]">
           <Link href="/admin" className="flex items-center gap-2">
             <Heart className="w-5 h-5 text-[#E0A996]" fill="#E0A996" />
-            <span className="font-bold text-lg text-[#2C2523] font-serif">Dilru Admin</span>
+            <span className="font-bold text-lg text-[#2C2523] font-serif">
+              Dilru Admin
+            </span>
           </Link>
         </div>
 
@@ -90,8 +92,8 @@ export default function AdminLayoutClient({ children }) {
 
       {/* 2. MOBILE HEADER & NAVIGATION */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-20 bg-white border-b border-[#F5EFEB] flex items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
+        <header className="h-20 border-b border-[#F5EFEB] bg-white/95 backdrop-blur-sm flex items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-4 min-w-0">
             <button
               onClick={() => setMobileMenuOpen(true)}
               className="lg:hidden p-2 text-[#4A3728] hover:bg-[#F5EFEB] rounded-xl transition-colors cursor-pointer"
@@ -99,21 +101,28 @@ export default function AdminLayoutClient({ children }) {
             >
               <Menu className="w-6 h-6" />
             </button>
-            <h1 className="text-xl font-bold text-[#2C2523] font-serif capitalize">
-              {pathname === "/admin"
-                ? "Overview"
-                : pathname.split("/").pop()}
-            </h1>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#96A288]">
+                Shop control
+              </p>
+              <h1 className="text-lg font-bold text-[#2C2523] font-serif truncate">
+                {pathname === "/admin"
+                  ? "Overview"
+                  : pathname.split("/").pop().replace(/-/g, " ")}
+              </h1>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex flex-col text-right">
-              <span className="text-sm font-bold text-[#2C2523]">{user?.name}</span>
-              <span className="text-xxs text-[#96A288] font-bold tracking-wide uppercase">
-                {user?.role}
+            <div className="hidden sm:flex flex-col items-end">
+              <span className="text-sm font-semibold text-[#2C2523]">
+                {user?.name}
+              </span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#96A288]">
+                {user?.role?.replace("_", " ") || "Studio Manager"}
               </span>
             </div>
-            <div className="w-10 h-10 rounded-full bg-[#E0A996]/15 flex items-center justify-center text-[#E0A996] border border-[#E0A996]/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#E0A996]/20 bg-[#E0A996]/10 text-[#E0A996]">
               <User className="w-5 h-5" />
             </div>
           </div>
@@ -140,7 +149,9 @@ export default function AdminLayoutClient({ children }) {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Heart className="w-5 h-5 text-[#E0A996]" fill="#E0A996" />
-                <span className="font-bold text-base text-[#2C2523] font-serif">Dilru Admin</span>
+                <span className="font-bold text-base text-[#2C2523] font-serif">
+                  Dilru Admin
+                </span>
               </Link>
               <button
                 onClick={() => setMobileMenuOpen(false)}

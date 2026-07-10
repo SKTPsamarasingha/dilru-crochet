@@ -1,13 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Search, 
-  Trash2, 
-  Loader2, 
-  AlertCircle, 
-  ChevronDown
-} from "lucide-react";
+import { Trash2, Loader2, AlertCircle, ChevronDown } from "lucide-react";
+import AdminSearchFilterBar from "@/components/AdminSearchFilterBar";
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -34,7 +29,13 @@ export default function AdminOrdersPage() {
   };
 
   useEffect(() => {
-    fetchOrders();
+    const timeoutId = window.setTimeout(() => {
+      void fetchOrders();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   const handleStatusChange = async (orderId, newStatus) => {
@@ -42,14 +43,16 @@ export default function AdminOrdersPage() {
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus }),
       });
 
       const data = await res.json();
       if (data.success) {
         // Update local state dynamically
         setOrders(
-          orders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+          orders.map((o) =>
+            o.id === orderId ? { ...o, status: newStatus } : o,
+          ),
         );
       } else {
         alert(data.error || "Failed to update order status.");
@@ -64,7 +67,7 @@ export default function AdminOrdersPage() {
 
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
-        method: "DELETE"
+        method: "DELETE",
       });
       const data = await res.json();
       if (data.success) {
@@ -79,15 +82,23 @@ export default function AdminOrdersPage() {
 
   // Filter & Search Logic
   const filteredOrders = orders.filter((o) => {
-    const matchesSearch = 
+    const matchesSearch =
       (o.id && o.id.toLowerCase().includes(search.toLowerCase())) ||
-      (o.userEmail && o.userEmail.toLowerCase().includes(search.toLowerCase())) ||
+      (o.userEmail &&
+        o.userEmail.toLowerCase().includes(search.toLowerCase())) ||
       (o.userName && o.userName.toLowerCase().includes(search.toLowerCase()));
     const matchesStatus = filterStatus === "All" || o.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
-  const statuses = ["All", "PENDING", "PROCESSING", "SHIPPED", "COMPLETED", "CANCELLED"];
+  const statuses = [
+    "All",
+    "PENDING",
+    "PROCESSING",
+    "SHIPPED",
+    "COMPLETED",
+    "CANCELLED",
+  ];
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -110,8 +121,12 @@ export default function AdminOrdersPage() {
     <div className="space-y-6">
       {/* 1. Header Area */}
       <div>
-        <h2 className="text-2xl font-bold text-[#2C2523] font-serif">Order Board</h2>
-        <p className="text-xs text-[#A0958F]">Track, configure statuses, and manage handcrafted deliveries.</p>
+        <h2 className="text-2xl font-bold text-[#2C2523] font-serif">
+          Order Board
+        </h2>
+        <p className="text-xs text-[#A0958F]">
+          Track, configure statuses, and manage handcrafted deliveries.
+        </p>
       </div>
 
       {/* 2. Error Alerts */}
@@ -123,36 +138,26 @@ export default function AdminOrdersPage() {
       )}
 
       {/* 3. Search and Filters */}
-      <div className="bg-white p-4 border border-[#FBEFEA] rounded-2xl shadow-xxs flex flex-col md:flex-row gap-4 justify-between items-center">
-        {/* Search */}
-        <div className="relative w-full md:max-w-xs">
-          <input
-            type="text"
-            placeholder="Search Order ID, Name, or Email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#FDFBF7] border border-[#EBE5E0] text-xs text-[#2C2523] placeholder-[#A0958F] rounded-xl focus:outline-none focus:border-[#E0A996] transition-all"
-          />
-          <Search className="absolute left-3 top-3 w-4 h-4 text-[#A0958F]" />
-        </div>
-
-        {/* Status filters */}
-        <div className="flex flex-wrap gap-1.5 w-full md:w-auto">
-          {statuses.map((stat) => (
-            <button
-              key={stat}
-              onClick={() => setFilterStatus(stat)}
-              className={`py-1.5 px-3 rounded-lg text-[10px] font-extrabold tracking-wide uppercase transition-all cursor-pointer ${
-                filterStatus === stat
-                  ? "bg-[#E0A996] text-[#2C2523]"
-                  : "bg-[#FDFBF7] border border-[#EBE5E0] text-[#4A3728] hover:border-[#A0958F]"
-              }`}
-            >
-              {stat}
-            </button>
-          ))}
-        </div>
-      </div>
+      <AdminSearchFilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        placeholder="Search Order ID, Name, or Email..."
+        summary={`${filteredOrders.length} result${filteredOrders.length === 1 ? "" : "s"}`}
+      >
+        {statuses.map((stat) => (
+          <button
+            key={stat}
+            onClick={() => setFilterStatus(stat)}
+            className={`py-1.5 px-3 rounded-lg text-[10px] font-extrabold tracking-wide uppercase transition-all cursor-pointer ${
+              filterStatus === stat
+                ? "bg-[#E0A996] text-[#2C2523]"
+                : "bg-[#FDFBF7] border border-[#EBE5E0] text-[#4A3728] hover:border-[#A0958F]"
+            }`}
+          >
+            {stat}
+          </button>
+        ))}
+      </AdminSearchFilterBar>
 
       {/* 4. Orders Content */}
       {loading ? (
@@ -181,29 +186,44 @@ export default function AdminOrdersPage() {
               </thead>
               <tbody className="divide-y divide-[#F5EFEB] text-xs text-[#4A3728]">
                 {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-[#FDFBF7]/50 transition-colors">
+                  <tr
+                    key={order.id}
+                    className="hover:bg-[#FDFBF7]/50 transition-colors"
+                  >
                     <td className="px-6 py-4 font-mono font-semibold text-[#2C2523] truncate max-w-[120px]">
                       {order.id}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-[#2C2523]">{order.userName}</div>
-                      <div className="text-xxs text-[#A0958F]">{order.userEmail}</div>
+                      <div className="font-semibold text-[#2C2523]">
+                        {order.userName}
+                      </div>
+                      <div className="text-xxs text-[#A0958F]">
+                        {order.userEmail}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-xxs text-[#A0958F] whitespace-nowrap">
                       {order.createdAt
-                        ? new Date(order.createdAt).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })
+                        ? new Date(order.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )
                         : "N/A"}
                     </td>
                     <td className="px-6 py-4">
                       <div className="space-y-1 max-w-[220px]">
                         {order.items?.map((item, idx) => (
                           <div key={idx} className="text-xxs">
-                            <span className="font-semibold text-[#2C2523]">{item.name}</span>
-                            <span className="text-[#A0958F]"> × {item.quantity}</span>
+                            <span className="font-semibold text-[#2C2523]">
+                              {item.name}
+                            </span>
+                            <span className="text-[#A0958F]">
+                              {" "}
+                              × {item.quantity}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -215,16 +235,24 @@ export default function AdminOrdersPage() {
                       <div className="relative inline-block">
                         <select
                           value={order.status}
-                          onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                          onChange={(e) =>
+                            handleStatusChange(order.id, e.target.value)
+                          }
                           className={`pl-3 pr-8 py-1.5 border rounded-lg text-xxs font-bold appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#E0A996] ${getStatusBadge(
-                            order.status
+                            order.status,
                           )}`}
                         >
-                          {statuses.filter((s) => s !== "All").map((opt) => (
-                            <option key={opt} value={opt} className="bg-white text-[#2C2523]">
-                              {opt}
-                            </option>
-                          ))}
+                          {statuses
+                            .filter((s) => s !== "All")
+                            .map((opt) => (
+                              <option
+                                key={opt}
+                                value={opt}
+                                className="bg-white text-[#2C2523]"
+                              >
+                                {opt}
+                              </option>
+                            ))}
                         </select>
                         <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-2.5 pointer-events-none text-[#4A3728]" />
                       </div>

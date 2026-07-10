@@ -1,33 +1,110 @@
-import { Settings, Sparkles, Save } from "lucide-react";
+"use client";
+
+import Link from "next/link";
+import { ArrowLeft, Settings } from "lucide-react";
+import FeatureToggles from "@/components/FeatureToggles";
+import { CURRENCY_CONFIG, DELIVERY_CONFIG, CONTACT_CONFIG } from "@/lib/config";
 
 export default function AdminSettingsPage() {
   return (
-    <div className="bg-white border border-[#FBEFEA] rounded-2xl p-8 sm:p-12 text-center max-w-2xl mx-auto shadow-xxs mt-8">
-      <div className="w-16 h-16 bg-gray-50 text-gray-600 flex items-center justify-center rounded-2xl mx-auto mb-6">
-        <Settings className="w-8 h-8" />
-      </div>
-      <h2 className="text-2xl font-bold text-[#2C2523] mb-2 font-serif">Boutique Settings</h2>
-      <p className="text-sm text-[#4A3728] max-w-md mx-auto mb-8 leading-relaxed">
-        Configure shop rules, edit local currency configurations, adjust delivery fees, and update contact links.
-      </p>
-
-      {/* Under Construction Notice */}
-      <div className="bg-[#FDFBF7] border border-[#F5EFEB] p-6 rounded-2xl text-left max-w-md mx-auto mb-8 space-y-3">
-        <h3 className="text-xs font-bold text-[#2C2523] uppercase tracking-wider flex items-center gap-1.5">
-          <Sparkles className="w-4 h-4 text-[#E0A996]" />
-          Upcoming Features
-        </h3>
-        <ul className="text-xxs text-[#4A3728] space-y-2 list-disc list-inside">
-          <li>Toggle local currency codes and Sri Lankan Rupee conversions.</li>
-          <li>Set base delivery fees and free shipping parameters.</li>
-          <li>Edit WhatsApp, Facebook Messenger, and custom request linkages.</li>
-          <li>Update security keys and token configurations safely.</li>
-        </ul>
+    <div className="space-y-8">
+      <div className="flex items-center gap-3">
+        <Link
+          href="/admin"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#F5EFEB] transition-colors hover:bg-[#EBE5E0]"
+        >
+          <ArrowLeft className="h-5 w-5 text-[#2C2523]" />
+        </Link>
+        <div>
+          <h1 className="font-serif text-3xl font-bold text-[#2C2523]">
+            Settings
+          </h1>
+          <p className="text-sm text-[#A0958F]">
+            Manage storefront features from the dashboard
+          </p>
+        </div>
       </div>
 
-      <button className="py-2.5 px-6 bg-[#E0A996] text-[#2C2523] font-semibold rounded-xl text-xs inline-flex items-center gap-2 opacity-50 cursor-not-allowed">
-        <Save className="w-4 h-4" /> Save Configuration
-      </button>
+      <div className="overflow-hidden rounded-2xl border border-[#FBEFEA] bg-white shadow-xs">
+        <div className="flex items-center gap-3 border-b border-[#F5EFEB] p-6">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#E0A996]/20 bg-[#E0A996]/10">
+            <Settings className="h-5 w-5 text-[#E0A996]" />
+          </div>
+          <div>
+            <h3 className="font-serif text-lg font-bold text-[#2C2523]">
+              Feature Toggles
+            </h3>
+            <p className="text-xs text-[#A0958F]">
+              Toggle storefront features instantly without editing code
+            </p>
+          </div>
+        </div>
+        <div className="p-6">
+          <FeatureToggles />
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="rounded-2xl border border-[#FBEFEA] bg-white p-6 shadow-xs">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#A0958F]">
+            Currency
+          </p>
+          <div className="space-y-2">
+            <div>
+              <p className="text-xs text-[#A0958F]">Primary</p>
+              <p className="font-semibold text-[#2C2523]">
+                {CURRENCY_CONFIG.primary}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-[#A0958F]">Exchange Rate</p>
+              <p className="font-semibold text-[#2C2523]">
+                1 USD = {CURRENCY_CONFIG.exchangeRate} LKR
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[#FBEFEA] bg-white p-6 shadow-xs">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#A0958F]">
+            Delivery
+          </p>
+          <div className="space-y-2">
+            <div>
+              <p className="text-xs text-[#A0958F]">Base Fee</p>
+              <p className="font-semibold text-[#2C2523]">
+                ${DELIVERY_CONFIG.baseFeeUSD}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-[#A0958F]">Free Shipping</p>
+              <p className="font-semibold text-[#2C2523]">
+                ${DELIVERY_CONFIG.freeShippingThresholdUSD}+
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[#FBEFEA] bg-white p-6 shadow-xs">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#A0958F]">
+            Contact
+          </p>
+          <div className="space-y-2">
+            {CONTACT_CONFIG.whatsapp.enabled && (
+              <p className="text-xs text-[#2C2523]">✓ WhatsApp</p>
+            )}
+            {CONTACT_CONFIG.facebook.enabled && (
+              <p className="text-xs text-[#2C2523]">✓ Messenger</p>
+            )}
+            {CONTACT_CONFIG.email.enabled && (
+              <p className="text-xs text-[#2C2523]">✓ Email</p>
+            )}
+            {CONTACT_CONFIG.instagram.enabled && (
+              <p className="text-xs text-[#2C2523]">✓ Instagram</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

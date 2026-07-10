@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import { clientSignIn, clientSignUp, clientSignOut } from "@/lib/auth-client";
 
 const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN", "EDITOR"];
@@ -62,16 +68,23 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    fetchSession();
-  }, [fetchSession]);
+    let cancelled = false;
 
-  useEffect(() => {
-    if (user) {
-      fetchOrders();
-    } else {
-      setOrders([]);
-    }
-  }, [user, fetchOrders]);
+    const loadSession = async () => {
+      const sessionUser = await fetchSession();
+      if (!cancelled && sessionUser) {
+        await fetchOrders();
+      } else if (!cancelled) {
+        setOrders([]);
+      }
+    };
+
+    loadSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchSession, fetchOrders]);
 
   const signIn = async (email, password) => {
     const loggedInUser = await clientSignIn(email, password);

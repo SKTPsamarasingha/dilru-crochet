@@ -2,19 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { 
-  Users, 
-  UserPlus, 
-  Search, 
-  Trash2, 
-  Loader2, 
-  ShieldAlert, 
-  AlertCircle, 
-  X, 
-  Save, 
-  Check, 
-  Shield 
+import {
+  Users,
+  UserPlus,
+  Trash2,
+  Loader2,
+  ShieldAlert,
+  AlertCircle,
+  X,
+  Save,
+  Check,
+  Shield,
 } from "lucide-react";
+import AdminSearchFilterBar from "@/components/AdminSearchFilterBar";
 
 const ROLE_GROUPS = [
   { key: "ALL", label: "All Users" },
@@ -58,7 +58,7 @@ export default function AdminCustomersPage() {
         setLoading(false);
         return;
       }
-      
+
       const data = await res.json();
       if (data.success) {
         setUsers(data.users);
@@ -73,7 +73,53 @@ export default function AdminCustomersPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    let active = true;
+
+    const loadUsers = async () => {
+      if (!isSuperAdmin) {
+        if (active) setLoading(false);
+        return;
+      }
+
+      if (active) {
+        setLoading(true);
+        setError("");
+      }
+
+      try {
+        const res = await fetch("/api/users");
+        if (res.status === 403) {
+          if (active) {
+            setError("Super Admin access required.");
+            setLoading(false);
+          }
+          return;
+        }
+
+        const data = await res.json();
+        if (active) {
+          if (data.success) {
+            setUsers(data.users);
+          } else {
+            setError(data.error || "Failed to load users");
+          }
+        }
+      } catch (err) {
+        if (active) {
+          setError("An error occurred while loading the registry.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadUsers();
+
+    return () => {
+      active = false;
+    };
   }, [isSuperAdmin]);
 
   const handleRoleChange = async (userId, newRole) => {
@@ -81,7 +127,7 @@ export default function AdminCustomersPage() {
       const res = await fetch(`/api/users/${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: newRole })
+        body: JSON.stringify({ role: newRole }),
       });
 
       const data = await res.json();
@@ -89,7 +135,7 @@ export default function AdminCustomersPage() {
         setSuccessMsg(`User role updated to ${newRole}!`);
         // Update local state dynamically
         setUsers(
-          users.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+          users.map((u) => (u.id === userId ? { ...u, role: newRole } : u)),
         );
         setTimeout(() => setSuccessMsg(""), 3000);
       } else {
@@ -118,13 +164,15 @@ export default function AdminCustomersPage() {
         body: JSON.stringify({
           email: email.trim(),
           name: name.trim(),
-          role: role.trim()
-        })
+          role: role.trim(),
+        }),
       });
 
       const data = await res.json();
       if (data.success) {
-        setSuccessMsg("User added successfully! They can now sign up using this email.");
+        setSuccessMsg(
+          "User added successfully! They can now sign up using this email.",
+        );
         setIsModalOpen(false);
         fetchUsers();
         setTimeout(() => setSuccessMsg(""), 4000);
@@ -143,7 +191,7 @@ export default function AdminCustomersPage() {
 
     try {
       const res = await fetch(`/api/users/${userId}`, {
-        method: "DELETE"
+        method: "DELETE",
       });
       const data = await res.json();
       if (data.success) {
@@ -163,8 +211,7 @@ export default function AdminCustomersPage() {
       (u.name && u.name.toLowerCase().includes(search.toLowerCase())) ||
       (u.email && u.email.toLowerCase().includes(search.toLowerCase())) ||
       (u.role && u.role.toLowerCase().includes(search.toLowerCase()));
-    const matchesGroup =
-      activeGroup === "ALL" || u.role === activeGroup;
+    const matchesGroup = activeGroup === "ALL" || u.role === activeGroup;
     return matchesSearch && matchesGroup;
   });
 
@@ -189,13 +236,18 @@ export default function AdminCustomersPage() {
           <ShieldAlert className="w-8 h-8" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-xl font-bold text-[#2C2523] font-serif">Access Denied</h2>
+          <h2 className="text-xl font-bold text-[#2C2523] font-serif">
+            Access Denied
+          </h2>
           <p className="text-xs text-[#4A3728] leading-relaxed">
-            Super Admin permissions are required to manage users and roles. Changing folder access or demoting users is restricted to directory owners.
+            Super Admin permissions are required to manage users and roles.
+            Changing folder access or demoting users is restricted to directory
+            owners.
           </p>
         </div>
         <div className="p-3 bg-[#FDFBF7] border border-[#F5EFEB] rounded-xl text-xxs text-[#A0958F]">
-          Please log in as <strong>admin@dilrucrochet.com</strong> to test this page.
+          Sign in with the seeded admin account to manage team access and
+          customer records page.
         </div>
       </div>
     );
@@ -206,9 +258,12 @@ export default function AdminCustomersPage() {
       {/* 2. Header Area */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-[#2C2523] font-serif">User Management</h2>
+          <h2 className="text-2xl font-bold text-[#2C2523] font-serif">
+            User Management
+          </h2>
           <p className="text-xs text-[#A0958F]">
-            Assign users to groups — customers, editors, admins — and change their roles.
+            Assign users to groups — customers, editors, admins — and change
+            their roles.
           </p>
         </div>
         <button
@@ -234,33 +289,26 @@ export default function AdminCustomersPage() {
       )}
 
       {/* Search & group filters */}
-      <div className="bg-white p-4 border border-[#FBEFEA] rounded-2xl shadow-xxs space-y-4">
-        <div className="relative w-full max-w-xs">
-          <input
-            type="text"
-            placeholder="Search Name, Email, or Role..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#FDFBF7] border border-[#EBE5E0] text-xs text-[#2C2523] placeholder-[#A0958F] rounded-xl focus:outline-none focus:border-[#E0A996] transition-all"
-          />
-          <Search className="absolute left-3 top-3 w-4 h-4 text-[#A0958F]" />
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {ROLE_GROUPS.map((group) => (
-            <button
-              key={group.key}
-              onClick={() => setActiveGroup(group.key)}
-              className={`py-1.5 px-3.5 rounded-lg text-xxs font-bold transition-all cursor-pointer ${
-                activeGroup === group.key
-                  ? "bg-[#E0A996] text-[#2C2523]"
-                  : "bg-[#FDFBF7] border border-[#EBE5E0] text-[#4A3728] hover:border-[#A0958F]"
-              }`}
-            >
-              {group.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <AdminSearchFilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        placeholder="Search Name, Email, or Role..."
+        summary={`${filteredUsers.length} user${filteredUsers.length === 1 ? "" : "s"}`}
+      >
+        {ROLE_GROUPS.map((group) => (
+          <button
+            key={group.key}
+            onClick={() => setActiveGroup(group.key)}
+            className={`py-1.5 px-3.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+              activeGroup === group.key
+                ? "bg-[#E0A996] text-[#2C2523]"
+                : "bg-[#FDFBF7] border border-[#EBE5E0] text-[#4A3728] hover:border-[#A0958F]"
+            }`}
+          >
+            {group.label}
+          </button>
+        ))}
+      </AdminSearchFilterBar>
 
       {/* 5. User List table */}
       {loading ? (
@@ -286,7 +334,10 @@ export default function AdminCustomersPage() {
               </thead>
               <tbody className="divide-y divide-[#F5EFEB] text-xs text-[#4A3728]">
                 {filteredUsers.map((u) => (
-                  <tr key={u.id} className="hover:bg-[#FDFBF7]/50 transition-colors">
+                  <tr
+                    key={u.id}
+                    className="hover:bg-[#FDFBF7]/50 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div className="font-semibold text-[#2C2523] flex items-center gap-1.5">
                         {u.name}
@@ -312,7 +363,7 @@ export default function AdminCustomersPage() {
                         value={u.role}
                         onChange={(e) => handleRoleChange(u.id, e.target.value)}
                         className={`px-2 py-1.5 border rounded-lg text-xxs font-bold cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#E0A996] ${getRoleLabelColor(
-                          u.role
+                          u.role,
                         )}`}
                       >
                         <option value="USER">USER</option>
@@ -354,8 +405,12 @@ export default function AdminCustomersPage() {
                 <UserPlus className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-[#2C2523] font-serif">Pre-Register User</h3>
-                <p className="text-xxs text-[#A0958F]">Create user mapping entries inside database.</p>
+                <h3 className="text-xl font-bold text-[#2C2523] font-serif">
+                  Pre-Register User
+                </h3>
+                <p className="text-xxs text-[#A0958F]">
+                  Create user mapping entries inside database.
+                </p>
               </div>
             </div>
 
@@ -368,7 +423,9 @@ export default function AdminCustomersPage() {
 
             <form onSubmit={handleAddUser} className="space-y-4">
               <div>
-                <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">Full Name</label>
+                <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">
+                  Full Name
+                </label>
                 <input
                   type="text"
                   required
@@ -380,7 +437,9 @@ export default function AdminCustomersPage() {
               </div>
 
               <div>
-                <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">Email Address</label>
+                <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   required
@@ -392,16 +451,22 @@ export default function AdminCustomersPage() {
               </div>
 
               <div>
-                <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">Role / Permissions</label>
+                <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">
+                  Role / Permissions
+                </label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   className="w-full px-3 py-2.5 bg-[#FDFBF7] border border-[#EBE5E0] text-xs text-[#2C2523] rounded-xl focus:outline-none focus:border-[#E0A996]"
                 >
                   <option value="USER">USER (Customer)</option>
-                  <option value="EDITOR">EDITOR (Staff / Stock management)</option>
+                  <option value="EDITOR">
+                    EDITOR (Staff / Stock management)
+                  </option>
                   <option value="ADMIN">ADMIN (Full content controls)</option>
-                  <option value="SUPER_ADMIN">SUPER_ADMIN (Owner / Role control)</option>
+                  <option value="SUPER_ADMIN">
+                    SUPER_ADMIN (Owner / Role control)
+                  </option>
                 </select>
               </div>
 

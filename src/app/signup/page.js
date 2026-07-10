@@ -40,7 +40,10 @@ export default function SignupPage() {
       router.refresh();
     } catch (err) {
       console.error("Sign up failed:", err);
-      if (err.code === "auth/email-already-in-use" || err.message.includes("in-use")) {
+      if (
+        err.code === "auth/email-already-in-use" ||
+        err.message.includes("in-use")
+      ) {
         setError("This email is already registered. Try logging in.");
       } else if (err.code === "auth/invalid-email") {
         setError("Please enter a valid email address.");
@@ -54,7 +57,10 @@ export default function SignupPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-4 bg-[#FDFBF7]">
-      <Link href="/" className="absolute top-8 left-8 flex items-center gap-2 text-sm font-semibold text-[#4A3728] hover:text-[#E0A996] transition-colors">
+      <Link
+        href="/"
+        className="absolute top-8 left-8 flex items-center gap-2 text-sm font-semibold text-[#4A3728] hover:text-[#E0A996] transition-colors"
+      >
         ← Back to Store
       </Link>
 
@@ -63,7 +69,9 @@ export default function SignupPage() {
           <div className="flex items-center justify-center w-12 h-12 mb-3 rounded-full bg-[#F5EFEB]">
             <Heart className="w-6 h-6 text-[#E0A996]" fill="#E0A996" />
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-[#2C2523] font-serif">Create Account</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-[#2C2523] font-serif">
+            Create Account
+          </h2>
           <p className="mt-2 text-sm text-[#4A3728] font-sans">
             Join the Crochet with Dilru family for customized handmade orders.
           </p>
@@ -78,7 +86,10 @@ export default function SignupPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-[#2C2523] mb-1.5">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-[#2C2523] mb-1.5"
+            >
               Full Name
             </label>
             <div className="relative">
@@ -88,7 +99,7 @@ export default function SignupPage() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Jane Doe"
+                placeholder="e.g. Maya Fernando"
                 className="w-full pl-10 pr-4 py-3 bg-[#FDFBF7] border border-[#EBE5E0] text-[#2C2523] placeholder-[#A0958F] rounded-2xl focus:outline-none focus:border-[#E0A996] focus:ring-1 focus:ring-[#E0A996] transition-all text-sm"
               />
               <User className="absolute left-3.5 top-3.5 w-4 h-4 text-[#A0958F]" />
@@ -96,7 +107,10 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-[#2C2523] mb-1.5">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-[#2C2523] mb-1.5"
+            >
               Email Address
             </label>
             <div className="relative">
@@ -106,7 +120,7 @@ export default function SignupPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. jane@example.com"
+                placeholder="e.g. maya@coastalcrochet.com"
                 className="w-full pl-10 pr-4 py-3 bg-[#FDFBF7] border border-[#EBE5E0] text-[#2C2523] placeholder-[#A0958F] rounded-2xl focus:outline-none focus:border-[#E0A996] focus:ring-1 focus:ring-[#E0A996] transition-all text-sm"
               />
               <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-[#A0958F]" />
@@ -114,7 +128,10 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-[#2C2523] mb-1.5">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-[#2C2523] mb-1.5"
+            >
               Password
             </label>
             <div className="relative">
@@ -132,7 +149,10 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#2C2523] mb-1.5">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-[#2C2523] mb-1.5"
+            >
               Confirm Password
             </label>
             <div className="relative">
@@ -164,7 +184,10 @@ export default function SignupPage() {
 
         <div className="mt-8 text-center text-sm text-[#4A3728]">
           Already have an account?{" "}
-          <Link href="/login" className="font-semibold text-[#E0A996] hover:text-[#CF9581] underline decoration-2 underline-offset-4">
+          <Link
+            href="/login"
+            className="font-semibold text-[#E0A996] hover:text-[#CF9581] underline decoration-2 underline-offset-4"
+          >
             Log in here
           </Link>
         </div>

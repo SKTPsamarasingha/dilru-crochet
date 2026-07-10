@@ -4,6 +4,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { CONTACT_CONFIG, CURRENCY_CONFIG, DELIVERY_CONFIG } from "@/lib/config";
+import { useFeatureSettings } from "@/lib/useFeatureSettings";
+import {
+  PriceDisplay,
+  PriceBadge,
+  CheckoutSummary,
+} from "@/components/PriceDisplay";
 import {
   ShoppingBag,
   Heart,
@@ -15,11 +22,12 @@ import {
   Truck,
   Scissors,
   MessageCircle,
+  Mail,
   ExternalLink,
   Info,
   Loader2,
   Sparkles,
-  ShoppingBag as CartIcon
+  ShoppingBag as CartIcon,
 } from "lucide-react";
 
 function FacebookIcon({ className = "w-5 h-5" }) {
@@ -38,6 +46,24 @@ function FacebookIcon({ className = "w-5 h-5" }) {
   );
 }
 
+function InstagramIcon({ className = "w-5 h-5" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.5" y2="6.5" />
+    </svg>
+  );
+}
+
 const YARN_COLORS = [
   { name: "Original", hex: "#E8D5C4" },
   { name: "Sage Green", hex: "#96A288" },
@@ -51,35 +77,40 @@ const SIZES = ["S", "M", "L"];
 export default function StoreFront({ initialProducts }) {
   const router = useRouter();
   const { user, signOut, fetchOrders, isAdmin } = useAuth();
+  const { settings, loading } = useFeatureSettings();
   const [products, setProducts] = useState(initialProducts);
   const [cart, setCart] = useState([]);
+  const [hasHydratedCart, setHasHydratedCart] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [customYarnColor, setCustomYarnColor] = useState("Original");
   const [customSize, setCustomSize] = useState("M");
   const [quantity, setQuantity] = useState(1);
-  
+
   // Checkout states
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [latestOrderId, setLatestOrderId] = useState("");
 
-  // Sync products if server props change
   useEffect(() => {
-    setProducts(initialProducts);
-  }, [initialProducts]);
+    if (typeof window === "undefined") return;
 
-  // Load cart from localStorage
-  useEffect(() => {
-    const savedCart = localStorage.getItem("dilru_cart");
-    if (savedCart) {
-      try {
+    try {
+      const savedCart = window.localStorage.getItem("dilru_cart");
+      if (savedCart) {
         setCart(JSON.parse(savedCart));
-      } catch (e) {
-        console.error("Failed to parse cart");
       }
+    } catch (e) {
+      console.error("Failed to parse cart", e);
+    } finally {
+      setHasHydratedCart(true);
     }
   }, []);
+
+  const showLKRPrices = settings?.showLKRPrices ?? true;
+  const showContactMethods = settings?.showContactMethods ?? true;
+  const allowDeliveryEditing = settings?.allowDeliveryEditing ?? true;
+  const maintenanceMode = settings?.maintenanceMode ?? false;
 
   // Save cart to localStorage
   const saveCart = (newCart) => {
@@ -89,7 +120,9 @@ export default function StoreFront({ initialProducts }) {
 
   const addToCart = (product, qty, color, size) => {
     const cartItemId = `${product.id}-${color}-${size}`;
-    const existingItemIndex = cart.findIndex((item) => item.cartItemId === cartItemId);
+    const existingItemIndex = cart.findIndex(
+      (item) => item.cartItemId === cartItemId,
+    );
 
     let newCart = [...cart];
     if (existingItemIndex > -1) {
@@ -104,7 +137,7 @@ export default function StoreFront({ initialProducts }) {
         customizable: product.customizable,
         yarnColor: color,
         size: size,
-        quantity: qty
+        quantity: qty,
       });
     }
 
@@ -136,6 +169,28 @@ export default function StoreFront({ initialProducts }) {
     return cart.reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
+  if (maintenanceMode) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center px-4 py-16">
+        <div className="max-w-xl rounded-3xl border border-[#E0A996]/30 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#E0A996]/15 text-[#E0A996]">
+            <Sparkles className="h-7 w-7" />
+          </div>
+          <h1 className="font-serif text-2xl font-bold text-[#2C2523]">
+            We&apos;re updating the boutique
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-[#4A3728]">
+            The storefront is currently in maintenance mode while we refresh our
+            handmade collection and order experience.
+          </p>
+          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.24em] text-[#96A288]">
+            Please check back soon.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const getCartCount = () => {
     return cart.reduce((count, item) => count + item.quantity, 0);
   };
@@ -154,8 +209,8 @@ export default function StoreFront({ initialProducts }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: cart,
-          total: getCartTotal()
-        })
+          total: getCartTotal(),
+        }),
       });
 
       const data = await res.json();
@@ -186,40 +241,50 @@ export default function StoreFront({ initialProducts }) {
       <header className="sticky top-0 z-40 w-full bg-[#FDFBF7]/90 backdrop-blur-md border-b border-[#F5EFEB]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <Heart className="w-6 h-6 text-[#E0A996] transition-transform group-hover:scale-110" fill="#E0A996" />
+            <Heart
+              className="w-6 h-6 text-[#E0A996] transition-transform group-hover:scale-110"
+              fill="#E0A996"
+            />
             <span className="text-xl sm:text-2xl font-bold tracking-tight text-[#2C2523] font-serif">
               Crochet with Dilru
             </span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-[#4A3728]">
-            <Link href="/shop" className="hover:text-[#E0A996] transition-colors">Shop Collection</Link>
-            <a href="#how-it-works" className="hover:text-[#E0A996] transition-colors">How It Works</a>
-            <a href="#about" className="hover:text-[#E0A996] transition-colors">Our Story</a>
-            <a href="#community" className="hover:text-[#E0A996] transition-colors">Community</a>
+            <Link
+              href="/shop"
+              className="hover:text-[#E0A996] transition-colors"
+            >
+              Shop Collection
+            </Link>
+            <a
+              href="#how-it-works"
+              className="hover:text-[#E0A996] transition-colors"
+            >
+              How It Works
+            </a>
+            <a href="#about" className="hover:text-[#E0A996] transition-colors">
+              Our Story
+            </a>
+            <a
+              href="#community"
+              className="hover:text-[#E0A996] transition-colors"
+            >
+              Community
+            </a>
           </nav>
 
           <div className="flex items-center gap-4">
             {/* User Account / Navigation */}
             {user ? (
               <div className="flex items-center gap-3 text-sm">
-                <span className="hidden sm:inline-block text-[#4A3728]">
-                  Hello, <strong className="text-[#2C2523]">{user.name}</strong>
-                </span>
                 <Link
                   href="/my-orders"
                   className="py-2 px-3.5 bg-[#F5EFEB] hover:bg-[#EBE5E0] text-[#2C2523] font-semibold rounded-full transition-colors text-xs"
                 >
                   My Orders
                 </Link>
-                {isAdmin && (
-                  <Link
-                    href="/admin"
-                    className="py-2 px-3.5 bg-[#96A288] hover:bg-[#818D74] text-white font-semibold rounded-full transition-colors text-xs"
-                  >
-                    Admin panel
-                  </Link>
-                )}
+
                 <button
                   onClick={handleSignOut}
                   className="text-xs font-semibold text-[#4A3728] hover:text-red-600 cursor-pointer underline underline-offset-4"
@@ -243,7 +308,7 @@ export default function StoreFront({ initialProducts }) {
               aria-label="Open Cart"
             >
               <ShoppingBag className="w-5.5 h-5.5" />
-              {getCartCount() > 0 && (
+              {hasHydratedCart && getCartCount() > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-[#E0A996] text-[#2C2523] text-xxs font-bold rounded-full border-2 border-[#FDFBF7]">
                   {getCartCount()}
                 </span>
@@ -255,25 +320,29 @@ export default function StoreFront({ initialProducts }) {
 
       <main className="flex-1">
         {/* 2. HERO SECTION */}
-        <section className="relative overflow-hidden py-16 sm:py-24 bg-[#FDFBF7] border-b border-[#F5EFEB]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+        <section className="relative overflow-hidden border-b border-[#F5EFEB] py-16 sm:py-24 bg-[radial-gradient(circle_at_top_left,_rgba(224,169,150,0.16),_transparent_38%),linear-gradient(135deg,_#fdfbf7_0%,_#fcf5ee_100%)]">
+          <div className="hero-ornament" />
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8">
               {/* Left text column */}
-              <div className="lg:col-span-7 space-y-6 sm:space-y-8 text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#F5EFEB] rounded-full text-xs font-semibold text-[#96A288] tracking-wide">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  100% Handcrafted Premium Crochet
+              <div className="space-y-6 text-center lg:col-span-7 lg:text-left sm:space-y-8">
+                <div className="boutique-badge inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-[#96A288]">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Slow-made crochet, island crafted
                 </div>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#2C2523] leading-tight font-serif">
-                  Handcrafted with Love, <br className="hidden sm:inline" />Stitched for You.
+                <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-[#2C2523] font-serif sm:text-5xl lg:text-6xl">
+                  Handmade warmth, <br className="hidden sm:inline" />
+                  made to wear and treasure.
                 </h1>
-                <p className="max-w-2xl mx-auto lg:mx-0 text-base sm:text-lg text-[#4A3728] leading-relaxed">
-                  Premium custom-order crochet cardigans, accessories, and bouquets made completely by hand. Every piece is unique, tailored to your choice of colors and sizes.
+                <p className="mx-auto max-w-2xl text-base leading-relaxed text-[#4A3728] sm:text-lg lg:mx-0">
+                  Discover heirloom-quality crochet cardigans, soft accessories,
+                  and floral keepsakes made to order with thoughtful detailing,
+                  rich texture, and a deeply personal finish.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <div className="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
                   <Link
                     href="/shop"
-                    className="py-4 px-8 bg-[#E0A996] hover:bg-[#CF9581] text-[#2C2523] font-bold rounded-full transition-all duration-300 text-center shadow-sm hover:shadow-md"
+                    className="rounded-full bg-[#E0A996] px-8 py-4 text-center text-sm font-bold text-[#2C2523] shadow-[0_20px_45px_-24px_rgba(44,37,35,0.35)] transition-all duration-300 hover:bg-[#CF9581] hover:shadow-md"
                   >
                     Browse Collection
                   </Link>
@@ -281,23 +350,26 @@ export default function StoreFront({ initialProducts }) {
                     href="https://web.facebook.com/p/Crochet-with-dilru-61553942184584/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 py-4 px-8 border-2 border-[#E0A996] text-[#2C2523] hover:bg-[#E0A996]/10 font-bold rounded-full transition-all duration-300 text-center"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#E0A996] px-8 py-4 text-center text-sm font-bold text-[#2C2523] transition-all duration-300 hover:bg-[#E0A996]/10"
                   >
                     Request Custom Order
-                    <ExternalLink className="w-4 h-4" />
+                    <ExternalLink className="h-4 w-4" />
                   </a>
                 </div>
               </div>
               {/* Right image column */}
-              <div className="lg:col-span-5 flex justify-center">
-                <div className="relative w-full max-w-md aspect-square rounded-3xl overflow-hidden border-8 border-white shadow-xl rotate-1 sm:rotate-2 hover:rotate-0 transition-transform duration-500 ease-out">
+              <div className="flex justify-center lg:col-span-5">
+                <div className="relative aspect-square w-full max-w-md overflow-hidden rounded-[2rem] border border-[#efe0d5] bg-[#f8efe8] p-2 shadow-[0_30px_70px_-30px_rgba(44,37,35,0.35)] rotate-1 transition-transform duration-500 ease-out hover:rotate-0 sm:rotate-2">
                   <img
                     src="https://images.unsplash.com/photo-1618220179428-22790b461013?q=80&w=600&auto=format&fit=crop"
                     alt="Handmade crochet stitch detail cardigan"
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute bottom-4 right-4 py-2.5 px-4 bg-white/95 backdrop-blur-sm rounded-2xl shadow-sm text-xs font-bold text-[#2C2523] border border-[#FBEFEA] flex items-center gap-1.5">
-                    <Heart className="w-3.5 h-3.5 text-[#E0A996]" fill="#E0A996" />
+                    <Heart
+                      className="w-3.5 h-3.5 text-[#E0A996]"
+                      fill="#E0A996"
+                    />
                     Stitched by Hand
                   </div>
                 </div>
@@ -307,45 +379,58 @@ export default function StoreFront({ initialProducts }) {
         </section>
 
         {/* 3. HOW IT WORKS */}
-        <section id="how-it-works" className="py-16 bg-[#FDFBF7]/50 border-b border-[#F5EFEB]">
+        <section
+          id="how-it-works"
+          className="py-16 bg-[#FDFBF7]/50 border-b border-[#F5EFEB]"
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#2C2523] font-serif">
                 How It Works
               </h2>
               <p className="mt-3 text-[#4A3728] text-sm sm:text-base">
-                Getting your custom handcrafted crochet creations is simple and personalized.
+                Getting your custom handcrafted crochet creations is simple and
+                personalized.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
-              <div className="flex flex-col items-center text-center p-6 bg-[#FDFBF7] border border-[#F5EFEB] rounded-3xl shadow-xxs hover-lift">
-                <div className="w-14 h-14 bg-[#E0A996]/15 text-[#E0A996] flex items-center justify-center rounded-2xl mb-5">
+              <div className="boutique-card flex flex-col items-center rounded-[1.5rem] p-6 text-center hover-lift">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E0A996]/15 text-[#E0A996]">
                   <Sparkles className="w-7 h-7" />
                 </div>
-                <h3 className="text-lg font-bold text-[#2C2523] mb-2 font-serif">1. Pick Your Design</h3>
+                <h3 className="text-lg font-bold text-[#2C2523] mb-2 font-serif">
+                  1. Pick Your Design
+                </h3>
                 <p className="text-sm text-[#4A3728] leading-relaxed">
-                  Browse our artisanal collection of cozy sweaters, flower bouquets, and accessories, selecting your preferred style.
+                  Browse our artisanal collection of cozy sweaters, flower
+                  bouquets, and accessories, selecting your preferred style.
                 </p>
               </div>
 
-              <div className="flex flex-col items-center text-center p-6 bg-[#FDFBF7] border border-[#F5EFEB] rounded-3xl shadow-xxs hover-lift">
-                <div className="w-14 h-14 bg-[#96A288]/15 text-[#96A288] flex items-center justify-center rounded-2xl mb-5">
+              <div className="boutique-card flex flex-col items-center rounded-[1.5rem] p-6 text-center hover-lift">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#96A288]/15 text-[#96A288]">
                   <Scissors className="w-7 h-7" />
                 </div>
-                <h3 className="text-lg font-bold text-[#2C2523] mb-2 font-serif">2. Customize Details</h3>
+                <h3 className="text-lg font-bold text-[#2C2523] mb-2 font-serif">
+                  2. Customize Details
+                </h3>
                 <p className="text-sm text-[#4A3728] leading-relaxed">
-                  Specify your favorite color combinations, yarn materials, and size requirements to make it uniquely yours.
+                  Specify your favorite color combinations, yarn materials, and
+                  size requirements to make it uniquely yours.
                 </p>
               </div>
 
-              <div className="flex flex-col items-center text-center p-6 bg-[#FDFBF7] border border-[#F5EFEB] rounded-3xl shadow-xxs hover-lift">
-                <div className="w-14 h-14 bg-[#E4A0A0]/15 text-[#E4A0A0] flex items-center justify-center rounded-2xl mb-5">
+              <div className="boutique-card flex flex-col items-center rounded-[1.5rem] p-6 text-center hover-lift">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E4A0A0]/15 text-[#E4A0A0]">
                   <Truck className="w-7 h-7" />
                 </div>
-                <h3 className="text-lg font-bold text-[#2C2523] mb-2 font-serif">3. Handcrafted Delivery</h3>
+                <h3 className="text-lg font-bold text-[#2C2523] mb-2 font-serif">
+                  3. Handcrafted Delivery
+                </h3>
                 <p className="text-sm text-[#4A3728] leading-relaxed">
-                  We stitch your order complete with custom care, packing it with love, and deliver islandwide to your doorstep.
+                  We stitch your order complete with custom care, packing it
+                  with love, and deliver islandwide to your doorstep.
                 </p>
               </div>
             </div>
@@ -353,7 +438,10 @@ export default function StoreFront({ initialProducts }) {
         </section>
 
         {/* 4. FEATURED PRODUCTS (teaser) */}
-        <section id="shop" className="py-16 sm:py-24 bg-[#FDFBF7]">
+        <section
+          id="shop"
+          className="py-16 sm:py-24 bg-[linear-gradient(180deg,_rgba(253,251,247,0.95)_0%,_rgba(248,241,235,0.9)_100%)]"
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row justify-between items-center mb-12 gap-4 text-center sm:text-left">
               <div>
@@ -361,7 +449,8 @@ export default function StoreFront({ initialProducts }) {
                   Featured Creations
                 </h2>
                 <p className="mt-2 text-[#4A3728] text-sm">
-                  A preview of our handcrafted collection. Visit the shop to browse and filter all items.
+                  A preview of our handcrafted collection. Visit the shop to
+                  browse and filter all items.
                 </p>
               </div>
               <Link
@@ -375,8 +464,13 @@ export default function StoreFront({ initialProducts }) {
             {products.length === 0 ? (
               <div className="text-center py-20 bg-white border border-[#F5EFEB] rounded-3xl">
                 <CartIcon className="w-12 h-12 mx-auto text-[#A0958F] mb-4" />
-                <h3 className="text-lg font-semibold text-[#2C2523] font-serif">No products loaded</h3>
-                <p className="text-sm text-[#4A3728] mt-1 mb-4">Please trigger seeding to populate the items.</p>
+                <h3 className="text-lg font-semibold text-[#2C2523] font-serif">
+                  The catalog is being refreshed
+                </h3>
+                <p className="text-sm text-[#4A3728] mt-1 mb-4">
+                  Seed the sample collection to preview our latest handmade
+                  pieces and custom order options.
+                </p>
                 <button
                   onClick={async () => {
                     const res = await fetch("/api/seed");
@@ -393,74 +487,80 @@ export default function StoreFront({ initialProducts }) {
               </div>
             ) : (
               <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                {products.slice(0, 4).map((product) => (
-                  <div
-                    key={product.id}
-                    className="group bg-white border border-[#FBEFEA] rounded-2xl overflow-hidden shadow-xxs hover:shadow-md transition-all duration-300 flex flex-col h-full"
-                  >
-                    {/* Image Container with hover zoom */}
-                    <div className="relative aspect-square overflow-hidden bg-[#F5EFEB]">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                      />
-                      {product.customizable && (
-                        <span className="absolute top-3 left-3 bg-[#96A288] text-white text-xxs font-bold tracking-wide uppercase px-2.5 py-1 rounded-full shadow-sm">
-                          Customizable
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="p-5 flex flex-col flex-grow">
-                      <div className="flex justify-between items-start mb-2 gap-2">
-                        <h3 className="font-bold text-[#2C2523] group-hover:text-[#E0A996] transition-colors leading-tight text-base font-serif">
-                          {product.name}
-                        </h3>
-                        <span className="font-bold text-[#2C2523] whitespace-nowrap text-sm bg-[#F5EFEB] py-0.5 px-2 rounded-lg">
-                          ${product.price.toFixed(2)}
-                        </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                  {products.slice(0, 4).map((product) => (
+                    <div
+                      key={product.id}
+                      className="group boutique-card flex h-full flex-col overflow-hidden rounded-[1.4rem] transition-all duration-300 hover:-translate-y-1"
+                    >
+                      {/* Image Container with hover zoom */}
+                      <div className="relative aspect-square overflow-hidden bg-[#F5EFEB]">
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                        />
+                        {product.customizable && (
+                          <span className="absolute top-3 left-3 bg-[#96A288] text-white text-xxs font-bold tracking-wide uppercase px-2.5 py-1 rounded-full shadow-sm">
+                            Customizable
+                          </span>
+                        )}
                       </div>
-                      <p className="text-xs text-[#4A3728] line-clamp-2 mb-4 leading-relaxed flex-grow">
-                        {product.description}
-                      </p>
-                      
-                      <button
-                        onClick={() => {
-                          setSelectedProduct(product);
-                          setCustomYarnColor("Original");
-                          setCustomSize(product.customizable ? "M" : "Standard");
-                          setQuantity(1);
-                        }}
-                        className="w-full py-2.5 px-4 bg-[#F5EFEB] hover:bg-[#E0A996] hover:text-[#2C2523] text-[#2C2523] font-semibold rounded-xl transition-all duration-200 text-xs text-center cursor-pointer"
-                      >
-                        View Details
-                      </button>
+
+                      <div className="flex flex-grow flex-col p-5">
+                        <div className="flex justify-between items-start mb-2 gap-2">
+                          <h3 className="font-bold text-[#2C2523] group-hover:text-[#E0A996] transition-colors leading-tight text-base font-serif">
+                            {product.name}
+                          </h3>
+                          <PriceBadge
+                            price={product.price}
+                            showLKRPrices={showLKRPrices}
+                          />
+                        </div>
+                        <p className="mb-4 flex-grow text-xs leading-relaxed text-[#4A3728] line-clamp-2">
+                          {product.description}
+                        </p>
+
+                        <button
+                          onClick={() => {
+                            setSelectedProduct(product);
+                            setCustomYarnColor("Original");
+                            setCustomSize(
+                              product.customizable ? "M" : "Standard",
+                            );
+                            setQuantity(1);
+                          }}
+                          className="w-full py-2.5 px-4 bg-[#F5EFEB] hover:bg-[#E0A996] hover:text-[#2C2523] text-[#2C2523] font-semibold rounded-xl transition-all duration-200 text-xs text-center cursor-pointer"
+                        >
+                          View Details
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-              {products.length > 4 && (
-                <div className="text-center mt-10">
-                  <Link
-                    href="/shop"
-                    className="inline-flex py-3 px-8 bg-[#F5EFEB] hover:bg-[#E0A996] text-[#2C2523] font-semibold rounded-full text-sm transition-colors"
-                  >
-                    See all {products.length} products
-                  </Link>
+                  ))}
                 </div>
-              )}
+                {products.length > 4 && (
+                  <div className="text-center mt-10">
+                    <Link
+                      href="/shop"
+                      className="inline-flex py-3 px-8 bg-[#F5EFEB] hover:bg-[#E0A996] text-[#2C2523] font-semibold rounded-full text-sm transition-colors"
+                    >
+                      See all {products.length} products
+                    </Link>
+                  </div>
+                )}
               </>
             )}
           </div>
         </section>
 
         {/* 5. ABOUT SECTION */}
-        <section id="about" className="py-16 sm:py-24 bg-[#F5EFEB]/40 border-t border-b border-[#F5EFEB]">
+        <section
+          id="about"
+          className="border-t border-b border-[#F5EFEB] bg-[linear-gradient(135deg,_rgba(245,239,235,0.6)_0%,_rgba(253,251,247,0.95)_100%)] py-16 sm:py-24"
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <div className="aspect-4/3 rounded-3xl overflow-hidden shadow-md">
+              <div className="aspect-4/3 overflow-hidden rounded-[2rem] border border-[#efe0d5] bg-[#f8efe8] p-2 shadow-[0_20px_50px_-24px_rgba(44,37,35,0.28)]">
                 <img
                   src="https://images.unsplash.com/photo-1526047932273-341f2a7631f9?q=80&w=600&auto=format&fit=crop"
                   alt="Crochet yarn workspace floral"
@@ -475,19 +575,32 @@ export default function StoreFront({ initialProducts }) {
                   Every Stitch Tells a Story
                 </h2>
                 <p className="text-[#4A3728] text-sm sm:text-base leading-relaxed">
-                  Welcome to <strong>Crochet with Dilru</strong>. What began as a personal hobby of hand-knitting gifts for family blossomed into a boutique small business. We specialize in slow-fashion apparel, sustainable accessories, and everlasting crochet flower bouquets.
+                  Welcome to <strong>Crochet with Dilru</strong>. What began as
+                  a personal hobby of hand-knitting gifts for family blossomed
+                  into a boutique small business. We specialize in slow-fashion
+                  apparel, sustainable accessories, and everlasting crochet
+                  flower bouquets.
                 </p>
                 <p className="text-[#4A3728] text-sm sm:text-base leading-relaxed">
-                  Every item is made to order by hand in Sri Lanka, using premium selected cotton and acrylic blends. We believe in slow crafts, details, and creating items that can be cherished forever.
+                  Every item is made to order by hand in Sri Lanka, using
+                  premium selected cotton and acrylic blends. We believe in slow
+                  crafts, details, and creating items that can be cherished
+                  forever.
                 </p>
                 <div className="pt-4 border-t border-[#EBE5E0] grid grid-cols-2 gap-6">
                   <div>
-                    <h4 className="text-2xl font-bold text-[#2C2523] font-serif">100%</h4>
+                    <h4 className="text-2xl font-bold text-[#2C2523] font-serif">
+                      100%
+                    </h4>
                     <p className="text-xs text-[#4A3728]">Handcrafted Items</p>
                   </div>
                   <div>
-                    <h4 className="text-2xl font-bold text-[#2C2523] font-serif">No Waste</h4>
-                    <p className="text-xs text-[#4A3728]">Made-to-order production</p>
+                    <h4 className="text-2xl font-bold text-[#2C2523] font-serif">
+                      No Waste
+                    </h4>
+                    <p className="text-xs text-[#4A3728]">
+                      Made-to-order production
+                    </p>
                   </div>
                 </div>
               </div>
@@ -503,7 +616,11 @@ export default function StoreFront({ initialProducts }) {
                 Made for Our Community
               </h2>
               <p className="mt-2 text-[#4A3728] text-sm">
-                Tag <span className="font-semibold text-[#E0A996]">@crochet_with_dilru</span> on social media to get featured!
+                Tag{" "}
+                <span className="font-semibold text-[#E0A996]">
+                  @crochet_with_dilru
+                </span>{" "}
+                on social media to get featured!
               </p>
             </div>
 
@@ -554,59 +671,168 @@ export default function StoreFront({ initialProducts }) {
       </main>
 
       {/* 7. FOOTER */}
-      <footer className="bg-[#2C2523] text-[#FDFBF7] py-12 border-t border-[#4A3728]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <footer className="border-t border-[#4A3728] bg-[#2C2523] py-12 text-[#FDFBF7] sm:py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-[1.2fr_0.7fr_0.7fr_0.9fr]">
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <Heart className="w-5 h-5 text-[#E0A996]" fill="#E0A996" />
-                <span className="font-bold text-lg tracking-tight font-serif">Crochet with Dilru</span>
+                <Heart className="h-5 w-5 text-[#E0A996]" fill="#E0A996" />
+                <span className="font-serif text-lg font-bold tracking-tight">
+                  Crochet with Dilru
+                </span>
               </div>
-              <p className="text-xs text-[#A0958F] leading-relaxed">
-                Handcrafted premium boutique creations made to order. Tailored with care in Sri Lanka.
+              <p className="max-w-md text-sm leading-relaxed text-[#CDBFB8]">
+                Handcrafted crochet apparel, accessories, and floral keepsakes
+                made to order with care, comfort, and a personal finish.
               </p>
+              <div className="flex flex-wrap gap-2 text-xs font-semibold text-[#F5EFEB]">
+                <span className="rounded-full border border-[#4A3728] px-3 py-1">
+                  Made to order
+                </span>
+                <span className="rounded-full border border-[#4A3728] px-3 py-1">
+                  Premium yarns
+                </span>
+                <span className="rounded-full border border-[#4A3728] px-3 py-1">
+                  Island delivery
+                </span>
+              </div>
             </div>
-            
+
             <div>
-              <h4 className="font-bold text-sm text-[#E0A996] mb-4 font-serif uppercase tracking-wide">Shop</h4>
-              <ul className="space-y-2 text-xs text-[#A0958F]">
-                <li><Link href="/shop" className="hover:text-white transition-colors">Apparel</Link></li>
-                <li><Link href="/shop" className="hover:text-white transition-colors">Decorations</Link></li>
-                <li><Link href="/shop" className="hover:text-white transition-colors">Accessories</Link></li>
-                <li><Link href="/shop" className="hover:text-white transition-colors">Custom orders</Link></li>
+              <h4 className="mb-4 font-serif text-sm font-bold uppercase tracking-wide text-[#E0A996]">
+                Shop
+              </h4>
+              <ul className="space-y-2 text-sm text-[#CDBFB8]">
+                <li>
+                  <Link
+                    href="/shop"
+                    className="transition-colors hover:text-white"
+                  >
+                    Apparel
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/shop"
+                    className="transition-colors hover:text-white"
+                  >
+                    Decor & bouquets
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/shop"
+                    className="transition-colors hover:text-white"
+                  >
+                    Accessories
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/shop"
+                    className="transition-colors hover:text-white"
+                  >
+                    Custom orders
+                  </Link>
+                </li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-bold text-sm text-[#E0A996] mb-4 font-serif uppercase tracking-wide">Information</h4>
-              <ul className="space-y-2 text-xs text-[#A0958F]">
-                <li><a href="#how-it-works" className="hover:text-white transition-colors">Ordering Process</a></li>
-                <li><a href="#about" className="hover:text-white transition-colors">Materials & Care</a></li>
-                <li><a href="#how-it-works" className="hover:text-white transition-colors">Delivery Options</a></li>
+              <h4 className="mb-4 font-serif text-sm font-bold uppercase tracking-wide text-[#E0A996]">
+                Helpful info
+              </h4>
+              <ul className="space-y-2 text-sm text-[#CDBFB8]">
+                <li>
+                  <a
+                    href="#how-it-works"
+                    className="transition-colors hover:text-white"
+                  >
+                    Ordering process
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#about"
+                    className="transition-colors hover:text-white"
+                  >
+                    Materials & care
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#community"
+                    className="transition-colors hover:text-white"
+                  >
+                    Community stories
+                  </a>
+                </li>
               </ul>
             </div>
 
-            <div>
-              <h4 className="font-bold text-sm text-[#E0A996] mb-4 font-serif uppercase tracking-wide">Contact Us</h4>
-              <p className="text-xs text-[#A0958F] leading-relaxed mb-4">
-                Message us on Facebook or WhatsApp for custom designs, corporate gifts, or special orders.
-              </p>
-              <div className="flex gap-4">
-                <a
-                  href="https://web.facebook.com/p/Crochet-with-dilru-61553942184584/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 bg-[#4A3728] hover:bg-[#E0A996] hover:text-[#2C2523] rounded-full transition-colors text-[#FDFBF7]"
-                  aria-label="Facebook Page"
-                >
-                  <FacebookIcon className="w-4 h-4" />
-                </a>
+            {showContactMethods && (
+              <div className="rounded-2xl border border-[#4A3728] bg-[#332724] p-4 sm:p-5">
+                <h4 className="mb-3 font-serif text-sm font-bold uppercase tracking-wide text-[#E0A996]">
+                  Contact us
+                </h4>
+                <p className="mb-4 text-sm leading-relaxed text-[#CDBFB8]">
+                  Reach out for bespoke designs, corporate gifting, or special
+                  occasion pieces.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {CONTACT_CONFIG.whatsapp.enabled && (
+                    <a
+                      href={CONTACT_CONFIG.whatsapp.getLink()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4A3728] text-[#FDFBF7] transition-colors hover:bg-[#E0A996] hover:text-[#2C2523]"
+                      aria-label="WhatsApp"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                    </a>
+                  )}
+                  {CONTACT_CONFIG.facebook.enabled && (
+                    <a
+                      href={CONTACT_CONFIG.facebook.getMessengerLink()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4A3728] text-[#FDFBF7] transition-colors hover:bg-[#E0A996] hover:text-[#2C2523]"
+                      aria-label="Messenger"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                    </a>
+                  )}
+                  {CONTACT_CONFIG.email.enabled && (
+                    <a
+                      href={`mailto:${CONTACT_CONFIG.email.address}`}
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4A3728] text-[#FDFBF7] transition-colors hover:bg-[#E0A996] hover:text-[#2C2523]"
+                      aria-label="Email"
+                    >
+                      <Mail className="h-4 w-4" />
+                    </a>
+                  )}
+                  {CONTACT_CONFIG.instagram.enabled && (
+                    <a
+                      href={CONTACT_CONFIG.instagram.profileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4A3728] text-[#FDFBF7] transition-colors hover:bg-[#E0A996] hover:text-[#2C2523]"
+                      aria-label="Instagram"
+                    >
+                      <InstagramIcon className="h-4 w-4" />
+                    </a>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
-          
-          <div className="mt-8 pt-8 border-t border-[#4A3728] text-center text-xxs text-[#A0958F]">
-            © {new Date().getFullYear()} Crochet with Dilru. All rights reserved. Handcrafted by Dilru.
+
+          <div className="mt-10 flex flex-col gap-3 border-t border-[#4A3728] pt-6 text-sm text-[#A0958F] md:flex-row md:items-center md:justify-between">
+            <p>
+              © {new Date().getFullYear()} Crochet with Dilru. Crafted by hand
+              for everyday luxury.
+            </p>
+            <p>Open for custom orders and boutique collaborations.</p>
           </div>
         </div>
       </footer>
@@ -641,9 +867,11 @@ export default function StoreFront({ initialProducts }) {
                 {selectedProduct.name}
               </h3>
               <div className="flex items-center gap-3 mb-4">
-                <span className="text-xl font-bold text-[#2C2523] bg-[#F5EFEB] py-0.5 px-2.5 rounded-lg">
-                  ${selectedProduct.price.toFixed(2)}
-                </span>
+                <PriceDisplay
+                  price={selectedProduct.price}
+                  size="lg"
+                  showLKRPrices={showLKRPrices}
+                />
                 {selectedProduct.customizable && (
                   <span className="text-xxs text-[#96A288] border border-[#96A288] px-2 py-0.5 rounded-full font-bold">
                     Customizable
@@ -717,7 +945,9 @@ export default function StoreFront({ initialProducts }) {
               {/* Quantity & Add button */}
               <div className="mt-auto border-t border-[#F5EFEB] pt-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[#2C2523]">Quantity</span>
+                  <span className="text-xs font-semibold text-[#2C2523]">
+                    Quantity
+                  </span>
                   <div className="flex items-center gap-3 border border-[#EBE5E0] rounded-xl px-2 py-1 bg-[#FDFBF7]">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -725,7 +955,9 @@ export default function StoreFront({ initialProducts }) {
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="text-sm font-bold w-4 text-center text-[#2C2523]">{quantity}</span>
+                    <span className="text-sm font-bold w-4 text-center text-[#2C2523]">
+                      {quantity}
+                    </span>
                     <button
                       onClick={() => setQuantity(quantity + 1)}
                       className="p-1 text-[#4A3728] hover:text-[#E0A996]"
@@ -736,7 +968,14 @@ export default function StoreFront({ initialProducts }) {
                 </div>
 
                 <button
-                  onClick={() => addToCart(selectedProduct, quantity, customYarnColor, customSize)}
+                  onClick={() =>
+                    addToCart(
+                      selectedProduct,
+                      quantity,
+                      customYarnColor,
+                      customSize,
+                    )
+                  }
                   className="w-full py-3.5 px-6 bg-[#E0A996] hover:bg-[#CF9581] text-[#2C2523] font-bold rounded-2xl shadow-sm hover:shadow-md transition-all text-xs cursor-pointer flex items-center justify-center gap-2"
                 >
                   <ShoppingBag className="w-4 h-4" />
@@ -759,7 +998,9 @@ export default function StoreFront({ initialProducts }) {
             <div className="p-6 border-b border-[#F5EFEB] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ShoppingBag className="w-5.5 h-5.5 text-[#2C2523]" />
-                <h3 className="text-lg font-bold text-[#2C2523] font-serif">Shopping Bag</h3>
+                <h3 className="text-lg font-bold text-[#2C2523] font-serif">
+                  Shopping Bag
+                </h3>
                 <span className="py-0.5 px-2 bg-[#F5EFEB] rounded-full text-xxs font-bold text-[#4A3728]">
                   {getCartCount()}
                 </span>
@@ -778,8 +1019,12 @@ export default function StoreFront({ initialProducts }) {
               {cart.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center text-[#A0958F]">
                   <ShoppingBag className="w-12 h-12 mb-3 text-[#EBE5E0]" />
-                  <p className="text-sm font-semibold font-serif">Your shopping bag is empty</p>
-                  <p className="text-xs mt-1">Stitch your dream designs from our catalog.</p>
+                  <p className="text-sm font-semibold font-serif">
+                    Your shopping bag is empty
+                  </p>
+                  <p className="text-xs mt-1">
+                    Stitch your dream designs from our catalog.
+                  </p>
                 </div>
               ) : (
                 cart.map((item) => (
@@ -787,10 +1032,14 @@ export default function StoreFront({ initialProducts }) {
                     key={item.cartItemId}
                     className="flex gap-4 border-b border-[#FBEFEA] pb-4 last:border-b-0"
                   >
-                    <div className="w-20 h-20 bg-[#F5EFEB] rounded-xl overflow-hidden flex-shrink-0">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[#F5EFEB]">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                    <div className="flex-grow">
+                    <div className="grow">
                       <div className="flex justify-between items-start mb-1 gap-2">
                         <h4 className="text-sm font-bold text-[#2C2523] font-serif leading-tight">
                           {item.name}
@@ -799,7 +1048,7 @@ export default function StoreFront({ initialProducts }) {
                           ${(item.price * item.quantity).toFixed(2)}
                         </span>
                       </div>
-                      
+
                       {item.customizable && (
                         <div className="flex flex-wrap gap-1.5 mb-3">
                           <span className="text-xxs bg-[#E0A996]/10 text-[#2C2523] px-1.5 py-0.5 rounded font-semibold border border-[#E0A996]/20">
@@ -819,7 +1068,9 @@ export default function StoreFront({ initialProducts }) {
                           >
                             <Minus className="w-3 h-3" />
                           </button>
-                          <span className="text-xs font-bold w-4 text-center text-[#2C2523]">{item.quantity}</span>
+                          <span className="text-xs font-bold w-4 text-center text-[#2C2523]">
+                            {item.quantity}
+                          </span>
                           <button
                             onClick={() => updateCartQty(item.cartItemId, 1)}
                             className="p-0.5 text-[#4A3728] hover:text-[#E0A996]"
@@ -845,12 +1096,18 @@ export default function StoreFront({ initialProducts }) {
             {/* Cart Footer */}
             {cart.length > 0 && (
               <div className="p-6 border-t border-[#F5EFEB] bg-[#FDFBF7] space-y-4">
-                <div className="flex justify-between items-center text-sm font-semibold text-[#4A3728]">
-                  <span>Subtotal</span>
-                  <span className="text-lg font-bold text-[#2C2523]">${getCartTotal().toFixed(2)}</span>
+                <div className="flex justify-between items-center text-sm font-semibold">
+                  <span className="text-[#4A3728]">Subtotal</span>
+                  <PriceDisplay
+                    price={getCartTotal()}
+                    size="lg"
+                    showConversion={true}
+                  />
                 </div>
                 <p className="text-xxs text-[#A0958F]">
-                  Taxes and shipping calculated at checkout. Every order is hand-packaged with personalized care instructions.
+                  {allowDeliveryEditing
+                    ? "Taxes and shipping calculated at checkout. Every order is hand-packaged with personalized care instructions."
+                    : "Delivery details are confirmed by our team for each handmade order."}
                 </p>
 
                 <button
@@ -874,16 +1131,19 @@ export default function StoreFront({ initialProducts }) {
       )}
 
       {/* 10. CHECKOUT SUCCESS MODAL */}
-      {checkoutSuccess && (
+      {showContactMethods && checkoutSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2C2523]/50 backdrop-blur-sm">
           <div className="bg-white border border-[#FBEFEA] w-full max-w-md rounded-3xl p-8 text-center shadow-xl space-y-6">
             <div className="w-16 h-16 bg-[#96A288]/15 text-[#96A288] flex items-center justify-center rounded-full mx-auto">
               <CheckCircle className="w-10 h-10" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-2xl font-bold text-[#2C2523] font-serif">Order Received!</h3>
+              <h3 className="text-2xl font-bold text-[#2C2523] font-serif">
+                Order Received!
+              </h3>
               <p className="text-sm text-[#4A3728] leading-relaxed">
-                Thank you for your order! Your request has been queued. We will start hand-stitching your items soon.
+                Thank you for your order! Your request has been queued. We will
+                start hand-stitching your items soon.
               </p>
               <div className="p-3 bg-[#F5EFEB] rounded-xl font-mono text-xs text-[#2C2523] mt-2">
                 Order ID: {latestOrderId}
@@ -913,15 +1173,19 @@ export default function StoreFront({ initialProducts }) {
       )}
 
       {/* 11. FLOATING CHAT BUBBLE */}
-      <a
-        href="https://web.facebook.com/p/Crochet-with-dilru-61553942184584/"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-40 bg-[#96A288] text-white py-3 px-5 rounded-full flex items-center gap-2 shadow-lg hover:bg-[#818D74] transition-all duration-300 chat-bubble-pulse group hover:scale-105"
-      >
-        <MessageCircle className="w-5 h-5 fill-white" />
-        <span className="text-xs font-bold tracking-wide uppercase">Chat for Custom Orders</span>
-      </a>
+      {showContactMethods && (
+        <a
+          href={CONTACT_CONFIG.whatsapp.getLink()}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-6 right-6 z-40 bg-[#96A288] text-white py-3 px-5 rounded-full flex items-center gap-2 shadow-lg hover:bg-[#818D74] transition-all duration-300 chat-bubble-pulse group hover:scale-105"
+        >
+          <MessageCircle className="w-5 h-5 fill-white" />
+          <span className="text-xs font-bold tracking-wide uppercase">
+            Chat for Custom Orders
+          </span>
+        </a>
+      )}
     </div>
   );
 }
