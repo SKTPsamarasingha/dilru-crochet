@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { CONTACT_CONFIG, CURRENCY_CONFIG, DELIVERY_CONFIG } from "@/lib/config";
 import { useFeatureSettings } from "@/lib/useFeatureSettings";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import {
   PriceDisplay,
   PriceBadge,
@@ -30,7 +32,7 @@ import {
   ShoppingBag as CartIcon,
 } from "lucide-react";
 
-function FacebookIcon({ className = "w-5 h-5" }) {
+   function FacebookIcon({ className = "w-5 h-5" }) {
   return (
     <svg
       className={className}
@@ -73,101 +75,42 @@ const YARN_COLORS = [
 ];
 
 const SIZES = ["S", "M", "L"];
-
 export default function StoreFront({ initialProducts }) {
   const router = useRouter();
   const { user, signOut, fetchOrders, isAdmin } = useAuth();
   const { settings, loading } = useFeatureSettings();
   const [products, setProducts] = useState(initialProducts);
-  const [cart, setCart] = useState([]);
-  const [hasHydratedCart, setHasHydratedCart] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [customYarnColor, setCustomYarnColor] = useState("Original");
   const [customSize, setCustomSize] = useState("M");
   const [quantity, setQuantity] = useState(1);
 
-  // Checkout states
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
-  const [latestOrderId, setLatestOrderId] = useState("");
-
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    const cards = document.querySelectorAll(".how-card");
+    if (!cards.length) return;
 
-    try {
-      const savedCart = window.localStorage.getItem("dilru_cart");
-      if (savedCart) {
-        setCart(JSON.parse(savedCart));
-      }
-    } catch (e) {
-      console.error("Failed to parse cart", e);
-    } finally {
-      setHasHydratedCart(true);
-    }
+    const observer = new IntersectionObserver(
+      (entries, observerInstance) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observerInstance.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.2,
+      },
+    );
+
+    cards.forEach((card) => observer.observe(card));
+    return () => observer.disconnect();
   }, []);
 
   const showLKRPrices = settings?.showLKRPrices ?? true;
   const showContactMethods = settings?.showContactMethods ?? true;
   const allowDeliveryEditing = settings?.allowDeliveryEditing ?? true;
   const maintenanceMode = settings?.maintenanceMode ?? false;
-
-  // Save cart to localStorage
-  const saveCart = (newCart) => {
-    setCart(newCart);
-    localStorage.setItem("dilru_cart", JSON.stringify(newCart));
-  };
-
-  const addToCart = (product, qty, color, size) => {
-    const cartItemId = `${product.id}-${color}-${size}`;
-    const existingItemIndex = cart.findIndex(
-      (item) => item.cartItemId === cartItemId,
-    );
-
-    let newCart = [...cart];
-    if (existingItemIndex > -1) {
-      newCart[existingItemIndex].quantity += qty;
-    } else {
-      newCart.push({
-        cartItemId,
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        customizable: product.customizable,
-        yarnColor: color,
-        size: size,
-        quantity: qty,
-      });
-    }
-
-    saveCart(newCart);
-    setIsCartOpen(true);
-    setSelectedProduct(null); // Close modal if open
-  };
-
-  const updateCartQty = (cartItemId, change) => {
-    const newCart = cart
-      .map((item) => {
-        if (item.cartItemId === cartItemId) {
-          const newQty = item.quantity + change;
-          return { ...item, quantity: newQty };
-        }
-        return item;
-      })
-      .filter((item) => item.quantity > 0);
-
-    saveCart(newCart);
-  };
-
-  const removeCartItem = (cartItemId) => {
-    const newCart = cart.filter((item) => item.cartItemId !== cartItemId);
-    saveCart(newCart);
-  };
-
-  const getCartTotal = () => {
-    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
-  };
 
   if (maintenanceMode) {
     return (
@@ -191,133 +134,8 @@ export default function StoreFront({ initialProducts }) {
     );
   }
 
-  const getCartCount = () => {
-    return cart.reduce((count, item) => count + item.quantity, 0);
-  };
-
-  const handleCheckout = async () => {
-    if (!user) {
-      // Redirect to login with callback back to home
-      router.push("/login?callbackUrl=/");
-      return;
-    }
-
-    setIsCheckingOut(true);
-    try {
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: cart,
-          total: getCartTotal(),
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        setLatestOrderId(data.order.id);
-        setCheckoutSuccess(true);
-        saveCart([]);
-        fetchOrders();
-      } else {
-        alert(data.error || "Checkout failed. Please try again.");
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      alert("An error occurred during checkout. Please try again.");
-    } finally {
-      setIsCheckingOut(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-    router.refresh();
-  };
-
   return (
     <div className="flex flex-col min-h-screen">
-      {/* 1. HEADER */}
-      <header className="sticky top-0 z-40 w-full bg-[#FDFBF7]/90 backdrop-blur-md border-b border-[#F5EFEB]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <Heart
-              className="w-6 h-6 text-[#E0A996] transition-transform group-hover:scale-110"
-              fill="#E0A996"
-            />
-            <span className="text-xl sm:text-2xl font-bold tracking-tight text-[#2C2523] font-serif">
-              Crochet with Dilru
-            </span>
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-[#4A3728]">
-            <Link
-              href="/shop"
-              className="hover:text-[#E0A996] transition-colors"
-            >
-              Shop Collection
-            </Link>
-            <a
-              href="#how-it-works"
-              className="hover:text-[#E0A996] transition-colors"
-            >
-              How It Works
-            </a>
-            <a href="#about" className="hover:text-[#E0A996] transition-colors">
-              Our Story
-            </a>
-            <a
-              href="#community"
-              className="hover:text-[#E0A996] transition-colors"
-            >
-              Community
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-4">
-            {/* User Account / Navigation */}
-            {user ? (
-              <div className="flex items-center gap-3 text-sm">
-                <Link
-                  href="/my-orders"
-                  className="py-2 px-3.5 bg-[#F5EFEB] hover:bg-[#EBE5E0] text-[#2C2523] font-semibold rounded-full transition-colors text-xs"
-                >
-                  My Orders
-                </Link>
-
-                <button
-                  onClick={handleSignOut}
-                  className="text-xs font-semibold text-[#4A3728] hover:text-red-600 cursor-pointer underline underline-offset-4"
-                >
-                  Sign Out
-                </button>
-              </div>
-            ) : (
-              <Link
-                href="/login"
-                className="text-sm font-semibold text-[#4A3728] hover:text-[#E0A996] transition-colors"
-              >
-                Log In
-              </Link>
-            )}
-
-            {/* Cart Trigger */}
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="relative p-2.5 bg-[#F5EFEB] hover:bg-[#EBE5E0] rounded-full text-[#2C2523] transition-colors cursor-pointer"
-              aria-label="Open Cart"
-            >
-              <ShoppingBag className="w-5.5 h-5.5" />
-              {hasHydratedCart && getCartCount() > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-[#E0A996] text-[#2C2523] text-xxs font-bold rounded-full border-2 border-[#FDFBF7]">
-                  {getCartCount()}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
-
       <main className="flex-1">
         {/* 2. HERO SECTION */}
         <section className="relative overflow-hidden border-b border-[#F5EFEB] py-16 sm:py-24 bg-[radial-gradient(circle_at_top_left,_rgba(224,169,150,0.16),_transparent_38%),linear-gradient(135deg,_#fdfbf7_0%,_#fcf5ee_100%)]">
@@ -326,15 +144,22 @@ export default function StoreFront({ initialProducts }) {
             <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8">
               {/* Left text column */}
               <div className="space-y-6 text-center lg:col-span-7 lg:text-left sm:space-y-8">
-                <div className="boutique-badge inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-[#96A288]">
+                <div className="boutique-badge inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-[#96A288] shadow-[0_10px_30px_-24px_rgba(150,162,136,0.7)]">
                   <Sparkles className="h-3.5 w-3.5" />
                   Slow-made crochet, island crafted
                 </div>
-                <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-[#2C2523] font-serif sm:text-5xl lg:text-6xl">
-                  Handmade warmth, <br className="hidden sm:inline" />
-                  made to wear and treasure.
+                <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-[#2C2523] font-serif sm:text-5xl lg:text-6xl animate-fade-in-up">
+                  <span className="block text-glow text-5xl sm:text-6xl lg:text-7xl">
+                    Handmade warmth
+                  </span>
+                  <span className="block text-[#2C2523] mt-4">
+                    made to wear and treasure.
+                  </span>
                 </h1>
-                <p className="mx-auto max-w-2xl text-base leading-relaxed text-[#4A3728] sm:text-lg lg:mx-0">
+                <p
+                  className="mx-auto max-w-2xl text-base leading-relaxed text-[#4A3728] sm:text-lg lg:mx-0 animate-fade-in-up"
+                  style={{ animationDelay: "0.2s" }}
+                >
                   Discover heirloom-quality crochet cardigans, soft accessories,
                   and floral keepsakes made to order with thoughtful detailing,
                   rich texture, and a deeply personal finish.
@@ -342,7 +167,7 @@ export default function StoreFront({ initialProducts }) {
                 <div className="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
                   <Link
                     href="/shop"
-                    className="rounded-full bg-[#E0A996] px-8 py-4 text-center text-sm font-bold text-[#2C2523] shadow-[0_20px_45px_-24px_rgba(44,37,35,0.35)] transition-all duration-300 hover:bg-[#CF9581] hover:shadow-md"
+                    className="rounded-full bg-gradient-to-r from-[#E0A996] via-[#F0B290] to-[#E4A0A0] px-8 py-4 text-center text-sm font-bold text-[#2C2523] shadow-[0_24px_40px_-22px_rgba(224,169,150,0.65)] transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_28px_45px_-24px_rgba(224,169,150,0.8)]"
                   >
                     Browse Collection
                   </Link>
@@ -350,7 +175,7 @@ export default function StoreFront({ initialProducts }) {
                     href="https://web.facebook.com/p/Crochet-with-dilru-61553942184584/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#E0A996] px-8 py-4 text-center text-sm font-bold text-[#2C2523] transition-all duration-300 hover:bg-[#E0A996]/10"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#E0A996] bg-white/90 px-8 py-4 text-center text-sm font-bold text-[#2C2523] shadow-[0_10px_35px_-24px_rgba(224,169,150,0.5)] transition-all duration-300 hover:bg-[#E0A996]/15 hover:shadow-[0_18px_40px_-24px_rgba(224,169,150,0.7)]"
                   >
                     Request Custom Order
                     <ExternalLink className="h-4 w-4" />
@@ -361,7 +186,7 @@ export default function StoreFront({ initialProducts }) {
               <div className="flex justify-center lg:col-span-5">
                 <div className="relative aspect-square w-full max-w-md overflow-hidden rounded-[2rem] border border-[#efe0d5] bg-[#f8efe8] p-2 shadow-[0_30px_70px_-30px_rgba(44,37,35,0.35)] rotate-1 transition-transform duration-500 ease-out hover:rotate-0 sm:rotate-2">
                   <img
-                    src="https://images.unsplash.com/photo-1618220179428-22790b461013?q=80&w=600&auto=format&fit=crop"
+                    src="https://scontent.fcmb3-2.fna.fbcdn.net/v/t39.30808-6/738691661_122259637694131406_2569675746571995115_n.jpg?stp=cp6_dst-jpg_tt6&cstp=mx720x960&ctp=s720x960&_nc_cat=104&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeF70V3FRtdzXMlWV9D-jRzgX6QidQ85A-1fpCJ1DzkD7Ufn-tJeqyaKTkKYEWIc_zdrqdGTtFGyHP7ELAT9y0Ga&_nc_ohc=hxLtLdwOwSQQ7kNvwHf0BpO&_nc_oc=AdrwK5vTXDImswMuxTQs5rRTw7W1tDmH9sIKM5G2ciCe8xdC9B5x87Udr_jCCC8TGlB7IhQzbOOATH0-he1kC24B&_nc_zt=23&_nc_ht=scontent.fcmb3-2.fna&_nc_gid=KU8TpWurG-1esLjZ6wZglA&_nc_ss=7d2a8&oh=00_AQDg-VUcrzZvT2ALAbcwpfQMSlX9FXt90_xGXmbPulgI0A&oe=6A5BA457"
                     alt="Handmade crochet stitch detail cardigan"
                     className="w-full h-full object-cover"
                   />
@@ -395,8 +220,8 @@ export default function StoreFront({ initialProducts }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
-              <div className="boutique-card flex flex-col items-center rounded-[1.5rem] p-6 text-center hover-lift">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E0A996]/15 text-[#E0A996]">
+              <div className="how-card boutique-card gradient-card subtle-glow flex flex-col items-center rounded-[1.5rem] p-6 text-center hover-lift reveal-card">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E0A996]/18 text-[#E0A996] shadow-[0_18px_40px_-28px_rgba(224,169,150,0.55)]">
                   <Sparkles className="w-7 h-7" />
                 </div>
                 <h3 className="text-lg font-bold text-[#2C2523] mb-2 font-serif">
@@ -408,8 +233,8 @@ export default function StoreFront({ initialProducts }) {
                 </p>
               </div>
 
-              <div className="boutique-card flex flex-col items-center rounded-[1.5rem] p-6 text-center hover-lift">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#96A288]/15 text-[#96A288]">
+              <div className="how-card boutique-card gradient-card subtle-glow flex flex-col items-center rounded-[1.5rem] p-6 text-center hover-lift reveal-card">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#96A288]/18 text-[#96A288] shadow-[0_18px_40px_-28px_rgba(150,162,136,0.45)]">
                   <Scissors className="w-7 h-7" />
                 </div>
                 <h3 className="text-lg font-bold text-[#2C2523] mb-2 font-serif">
@@ -421,8 +246,8 @@ export default function StoreFront({ initialProducts }) {
                 </p>
               </div>
 
-              <div className="boutique-card flex flex-col items-center rounded-[1.5rem] p-6 text-center hover-lift">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E4A0A0]/15 text-[#E4A0A0]">
+              <div className="how-card boutique-card gradient-card subtle-glow flex flex-col items-center rounded-[1.5rem] p-6 text-center hover-lift reveal-card">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E4A0A0]/18 text-[#E4A0A0] shadow-[0_18px_40px_-28px_rgba(228,160,160,0.45)]">
                   <Truck className="w-7 h-7" />
                 </div>
                 <h3 className="text-lg font-bold text-[#2C2523] mb-2 font-serif">
@@ -455,7 +280,7 @@ export default function StoreFront({ initialProducts }) {
               </div>
               <Link
                 href="/shop"
-                className="py-2.5 px-5 bg-[#E0A996] hover:bg-[#CF9581] text-[#2C2523] font-semibold rounded-full text-xs transition-colors shadow-xxs"
+                className="py-2.5 px-5 rounded-full bg-gradient-to-r from-[#E0A996] via-[#F0B290] to-[#E4A0A0] text-[#2C2523] font-semibold text-xs transition-transform duration-300 hover:scale-[1.01] shadow-[0_22px_35px_-22px_rgba(224,169,150,0.72)]"
               >
                 View Full Shop →
               </Link>
@@ -562,7 +387,7 @@ export default function StoreFront({ initialProducts }) {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="aspect-4/3 overflow-hidden rounded-[2rem] border border-[#efe0d5] bg-[#f8efe8] p-2 shadow-[0_20px_50px_-24px_rgba(44,37,35,0.28)]">
                 <img
-                  src="https://images.unsplash.com/photo-1526047932273-341f2a7631f9?q=80&w=600&auto=format&fit=crop"
+                  src="https://scontent.fcmb12-1.fna.fbcdn.net/v/t39.30808-6/735317520_122259637172131406_2006573388631911599_n.jpg?stp=cp6_dst-jpg_tt6&cstp=mx720x960&ctp=s720x960&_nc_cat=108&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeFiFKvHil9p0FtylHlRJTq5hyHvSL6e83eHIe9Ivp7zdxNQWLvGDOnTKa1DNbiIyuA5styL_8N5TqXdQhNLuWsK&_nc_ohc=QcFw5nrIhWAQ7kNvwGL1JEC&_nc_oc=Adopb5rQrcKa5lkhjdayVKK_5xkX05vqZClsQyknAiLwQPWDO7VuvgNiviiQNdEv6zedn3calpPPVvBmqI04LG9W&_nc_zt=23&_nc_ht=scontent.fcmb12-1.fna&_nc_gid=ZoOhjj9ooIzlz0HSW1mYiA&_nc_ss=7d2a8&oh=00_AQCNdsPKlnAodSAKUHELEYhahVMLqOSiRUeXybTTeII6vw&oe=6A5BA858"
                   alt="Crochet yarn workspace floral"
                   className="w-full h-full object-cover"
                 />
@@ -627,7 +452,7 @@ export default function StoreFront({ initialProducts }) {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="relative aspect-square rounded-2xl overflow-hidden border border-[#F5EFEB] group bg-[#FBEFEA] cursor-pointer">
                 <img
-                  src="https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=600&auto=format&fit=crop"
+                  src="https://scontent.fcmb11-3.fna.fbcdn.net/v/t39.30808-6/742102269_122260366910131406_7102549205013734556_n.jpg?stp=dst-jpg_tt6&cstp=mx720x960&ctp=s720x960&_nc_cat=101&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeFOaJC9gSA-sPbptUBoNGc_2p6UHbBSHHbanpQdsFIcdvDSVI5vpU3Zx0JaPCDMM72x_s1DKwGn8fYGH71xqbra&_nc_ohc=73dH-GVxvt0Q7kNvwHlcsJK&_nc_oc=AdpJ4vNIa6JWu3zN9TUh6qvfkx2SZCzDxX43eGAALAAOwhIGLGeIkFsnP8B22nN66szifOi46Q9tfQMDZxi7s4ug&_nc_zt=23&_nc_ht=scontent.fcmb11-3.fna&_nc_gid=N9CskCCb68gUM9fq3IcB0A&_nc_ss=7d2a8&oh=00_AQAuXDgrFCt8aldUdLxJxZoCqNv-VEHYB8quLCfc_pDqSg&oe=6A5BB3B4"
                   alt="Customer feature tote bag"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
@@ -637,7 +462,7 @@ export default function StoreFront({ initialProducts }) {
               </div>
               <div className="relative aspect-square rounded-2xl overflow-hidden border border-[#F5EFEB] group bg-[#FBEFEA] cursor-pointer">
                 <img
-                  src="https://images.unsplash.com/photo-1596436889106-be35e843f974?q=80&w=600&auto=format&fit=crop"
+                  src="https://scontent.fcmb11-3.fna.fbcdn.net/v/t39.30808-6/739243585_122259929936131406_8064892688350052236_n.jpg?stp=dst-jpg_tt6&cstp=mx1536x2048&ctp=s1536x2048&_nc_cat=111&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeEyDAyVmfa0dqAr0vxp_4QHmLF25ncUc7GYsXbmdxRzsTfiVjV6uKfY_72-i_RgvVDGxody767gDTsHXfoo_Vcl&_nc_ohc=3JHPOcWKo8cQ7kNvwGQEFUf&_nc_oc=AdpcuZLlaGmKXoLWHi41JfFv5A2fm5DhrK-c8exb_gwmBJpDyL9a3d5QBm5xmOXsUoTlBDctXp14_8uK2SNAXuhI&_nc_zt=23&_nc_ht=scontent.fcmb11-3.fna&_nc_gid=CuEfK6LrJq2w99tRs7pV6w&_nc_ss=7d2a8&oh=00_AQC4fC85pF7gyYowJwJXfPr44BVsIMB9TyiwZPaKZ_Ej3w&oe=6A5BA722"
                   alt="Customer feature flowers"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
@@ -647,7 +472,7 @@ export default function StoreFront({ initialProducts }) {
               </div>
               <div className="relative aspect-square rounded-2xl overflow-hidden border border-[#F5EFEB] group bg-[#FBEFEA] cursor-pointer">
                 <img
-                  src="https://images.unsplash.com/photo-1584992236310-6edddc085ff8?q=80&w=600&auto=format&fit=crop"
+                  src="https://scontent.fcmb11-3.fna.fbcdn.net/v/t39.30808-6/703110888_122254991342131406_3405810202780959783_n.jpg?stp=dst-jpg_tt6&cstp=mx1170x1557&ctp=s1170x1557&_nc_cat=107&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeEV84e2uXU9Vig2apDVFWmrChAXUq8pLmIKEBdSrykuYsQvtjKZVNRjlBMVFZjnCcidgFcw58N4pIGdiV2a-tN8&_nc_ohc=6nV81asfWk0Q7kNvwH9pSiZ&_nc_oc=AdpuC5jFvxxeqmwoHddTy6J2nkR3bMJEE6JyiGa5SmUS--2wbKNgR9VInQTdVsN89pHRrnMHMGMPB_EhSc0uHQwB&_nc_zt=23&_nc_ht=scontent.fcmb11-3.fna&_nc_gid=tYFHvT0rV61kowSePfDhDg&_nc_ss=7d2a8&oh=00_AQBrWOAWSUFgehLEvFZHs6TdxRL9w0RMLUBfnE7TB2MoQw&oe=6A5BA617"
                   alt="Customer feature beanie"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
@@ -657,7 +482,7 @@ export default function StoreFront({ initialProducts }) {
               </div>
               <div className="relative aspect-square rounded-2xl overflow-hidden border border-[#F5EFEB] group bg-[#FBEFEA] cursor-pointer">
                 <img
-                  src="https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?q=80&w=600&auto=format&fit=crop"
+                  src="https://scontent.fcmb12-1.fna.fbcdn.net/v/t39.30808-6/735317520_122259637172131406_2006573388631911599_n.jpg?stp=cp6_dst-jpg_tt6&cstp=mx720x960&ctp=s720x960&_nc_cat=108&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeFiFKvHil9p0FtylHlRJTq5hyHvSL6e83eHIe9Ivp7zdxNQWLvGDOnTKa1DNbiIyuA5styL_8N5TqXdQhNLuWsK&_nc_ohc=QcFw5nrIhWAQ7kNvwGL1JEC&_nc_oc=Adopb5rQrcKa5lkhjdayVKK_5xkX05vqZClsQyknAiLwQPWDO7VuvgNiviiQNdEv6zedn3calpPPVvBmqI04LG9W&_nc_zt=23&_nc_ht=scontent.fcmb12-1.fna&_nc_gid=RTf33MuVkq73s9Hb-MQ1kg&_nc_ss=7d2a8&oh=00_AQDT-YAnLu2mtFjcQf5AwVUESovsgxNbbC1wpC5_b049Dw&oe=6A5BA858"
                   alt="Customer feature cardigan"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
@@ -670,172 +495,7 @@ export default function StoreFront({ initialProducts }) {
         </section>
       </main>
 
-      {/* 7. FOOTER */}
-      <footer className="border-t border-[#4A3728] bg-[#2C2523] py-12 text-[#FDFBF7] sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-[1.2fr_0.7fr_0.7fr_0.9fr]">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Heart className="h-5 w-5 text-[#E0A996]" fill="#E0A996" />
-                <span className="font-serif text-lg font-bold tracking-tight">
-                  Crochet with Dilru
-                </span>
-              </div>
-              <p className="max-w-md text-sm leading-relaxed text-[#CDBFB8]">
-                Handcrafted crochet apparel, accessories, and floral keepsakes
-                made to order with care, comfort, and a personal finish.
-              </p>
-              <div className="flex flex-wrap gap-2 text-xs font-semibold text-[#F5EFEB]">
-                <span className="rounded-full border border-[#4A3728] px-3 py-1">
-                  Made to order
-                </span>
-                <span className="rounded-full border border-[#4A3728] px-3 py-1">
-                  Premium yarns
-                </span>
-                <span className="rounded-full border border-[#4A3728] px-3 py-1">
-                  Island delivery
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="mb-4 font-serif text-sm font-bold uppercase tracking-wide text-[#E0A996]">
-                Shop
-              </h4>
-              <ul className="space-y-2 text-sm text-[#CDBFB8]">
-                <li>
-                  <Link
-                    href="/shop"
-                    className="transition-colors hover:text-white"
-                  >
-                    Apparel
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/shop"
-                    className="transition-colors hover:text-white"
-                  >
-                    Decor & bouquets
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/shop"
-                    className="transition-colors hover:text-white"
-                  >
-                    Accessories
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/shop"
-                    className="transition-colors hover:text-white"
-                  >
-                    Custom orders
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="mb-4 font-serif text-sm font-bold uppercase tracking-wide text-[#E0A996]">
-                Helpful info
-              </h4>
-              <ul className="space-y-2 text-sm text-[#CDBFB8]">
-                <li>
-                  <a
-                    href="#how-it-works"
-                    className="transition-colors hover:text-white"
-                  >
-                    Ordering process
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#about"
-                    className="transition-colors hover:text-white"
-                  >
-                    Materials & care
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#community"
-                    className="transition-colors hover:text-white"
-                  >
-                    Community stories
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {showContactMethods && (
-              <div className="rounded-2xl border border-[#4A3728] bg-[#332724] p-4 sm:p-5">
-                <h4 className="mb-3 font-serif text-sm font-bold uppercase tracking-wide text-[#E0A996]">
-                  Contact us
-                </h4>
-                <p className="mb-4 text-sm leading-relaxed text-[#CDBFB8]">
-                  Reach out for bespoke designs, corporate gifting, or special
-                  occasion pieces.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {CONTACT_CONFIG.whatsapp.enabled && (
-                    <a
-                      href={CONTACT_CONFIG.whatsapp.getLink()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4A3728] text-[#FDFBF7] transition-colors hover:bg-[#E0A996] hover:text-[#2C2523]"
-                      aria-label="WhatsApp"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                    </a>
-                  )}
-                  {CONTACT_CONFIG.facebook.enabled && (
-                    <a
-                      href={CONTACT_CONFIG.facebook.getMessengerLink()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4A3728] text-[#FDFBF7] transition-colors hover:bg-[#E0A996] hover:text-[#2C2523]"
-                      aria-label="Messenger"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                    </a>
-                  )}
-                  {CONTACT_CONFIG.email.enabled && (
-                    <a
-                      href={`mailto:${CONTACT_CONFIG.email.address}`}
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4A3728] text-[#FDFBF7] transition-colors hover:bg-[#E0A996] hover:text-[#2C2523]"
-                      aria-label="Email"
-                    >
-                      <Mail className="h-4 w-4" />
-                    </a>
-                  )}
-                  {CONTACT_CONFIG.instagram.enabled && (
-                    <a
-                      href={CONTACT_CONFIG.instagram.profileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4A3728] text-[#FDFBF7] transition-colors hover:bg-[#E0A996] hover:text-[#2C2523]"
-                      aria-label="Instagram"
-                    >
-                      <InstagramIcon className="h-4 w-4" />
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-10 flex flex-col gap-3 border-t border-[#4A3728] pt-6 text-sm text-[#A0958F] md:flex-row md:items-center md:justify-between">
-            <p>
-              © {new Date().getFullYear()} Crochet with Dilru. Crafted by hand
-              for everyday luxury.
-            </p>
-            <p>Open for custom orders and boutique collaborations.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       {/* 8. DETAIL MODAL */}
       {selectedProduct && (
@@ -968,14 +628,19 @@ export default function StoreFront({ initialProducts }) {
                 </div>
 
                 <button
-                  onClick={() =>
-                    addToCart(
-                      selectedProduct,
-                      quantity,
-                      customYarnColor,
-                      customSize,
-                    )
-                  }
+                  onClick={() => {
+                    window.dispatchEvent(
+                      new CustomEvent("add-to-cart", {
+                        detail: {
+                          product: selectedProduct,
+                          qty: quantity,
+                          color: customYarnColor,
+                          size: customSize,
+                        },
+                      }),
+                    );
+                    setSelectedProduct(null); // Close modal
+                  }}
                   className="w-full py-3.5 px-6 bg-[#E0A996] hover:bg-[#CF9581] text-[#2C2523] font-bold rounded-2xl shadow-sm hover:shadow-md transition-all text-xs cursor-pointer flex items-center justify-center gap-2"
                 >
                   <ShoppingBag className="w-4 h-4" />
@@ -985,206 +650,6 @@ export default function StoreFront({ initialProducts }) {
             </div>
           </div>
         </div>
-      )}
-
-      {/* 9. SLIDE-OUT CART DRAWER */}
-      {isCartOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-[#2C2523]/40 backdrop-blur-xxs">
-          <div
-            className="fixed inset-0 cursor-pointer"
-            onClick={() => setIsCartOpen(false)}
-          />
-          <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col border-l border-[#F5EFEB]">
-            <div className="p-6 border-b border-[#F5EFEB] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="w-5.5 h-5.5 text-[#2C2523]" />
-                <h3 className="text-lg font-bold text-[#2C2523] font-serif">
-                  Shopping Bag
-                </h3>
-                <span className="py-0.5 px-2 bg-[#F5EFEB] rounded-full text-xxs font-bold text-[#4A3728]">
-                  {getCartCount()}
-                </span>
-              </div>
-              <button
-                onClick={() => setIsCartOpen(false)}
-                className="p-2 hover:bg-[#F5EFEB] rounded-full text-[#4A3728] transition-colors cursor-pointer"
-                aria-label="Close Cart"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Cart Items List */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {cart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center text-[#A0958F]">
-                  <ShoppingBag className="w-12 h-12 mb-3 text-[#EBE5E0]" />
-                  <p className="text-sm font-semibold font-serif">
-                    Your shopping bag is empty
-                  </p>
-                  <p className="text-xs mt-1">
-                    Stitch your dream designs from our catalog.
-                  </p>
-                </div>
-              ) : (
-                cart.map((item) => (
-                  <div
-                    key={item.cartItemId}
-                    className="flex gap-4 border-b border-[#FBEFEA] pb-4 last:border-b-0"
-                  >
-                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[#F5EFEB]">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="grow">
-                      <div className="flex justify-between items-start mb-1 gap-2">
-                        <h4 className="text-sm font-bold text-[#2C2523] font-serif leading-tight">
-                          {item.name}
-                        </h4>
-                        <span className="text-sm font-semibold text-[#2C2523] whitespace-nowrap">
-                          ${(item.price * item.quantity).toFixed(2)}
-                        </span>
-                      </div>
-
-                      {item.customizable && (
-                        <div className="flex flex-wrap gap-1.5 mb-3">
-                          <span className="text-xxs bg-[#E0A996]/10 text-[#2C2523] px-1.5 py-0.5 rounded font-semibold border border-[#E0A996]/20">
-                            Color: {item.yarnColor}
-                          </span>
-                          <span className="text-xxs bg-[#96A288]/10 text-[#96A288] px-1.5 py-0.5 rounded font-semibold border border-[#96A288]/20">
-                            Size: {item.size}
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5 border border-[#EBE5E0] rounded-lg px-1.5 py-0.5 bg-[#FDFBF7]">
-                          <button
-                            onClick={() => updateCartQty(item.cartItemId, -1)}
-                            className="p-0.5 text-[#4A3728] hover:text-[#E0A996]"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="text-xs font-bold w-4 text-center text-[#2C2523]">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => updateCartQty(item.cartItemId, 1)}
-                            className="p-0.5 text-[#4A3728] hover:text-[#E0A996]"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-
-                        <button
-                          onClick={() => removeCartItem(item.cartItemId)}
-                          className="text-[#A0958F] hover:text-red-500 transition-colors p-1"
-                          aria-label="Remove item"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Cart Footer */}
-            {cart.length > 0 && (
-              <div className="p-6 border-t border-[#F5EFEB] bg-[#FDFBF7] space-y-4">
-                <div className="flex justify-between items-center text-sm font-semibold">
-                  <span className="text-[#4A3728]">Subtotal</span>
-                  <PriceDisplay
-                    price={getCartTotal()}
-                    size="lg"
-                    showConversion={true}
-                  />
-                </div>
-                <p className="text-xxs text-[#A0958F]">
-                  {allowDeliveryEditing
-                    ? "Taxes and shipping calculated at checkout. Every order is hand-packaged with personalized care instructions."
-                    : "Delivery details are confirmed by our team for each handmade order."}
-                </p>
-
-                <button
-                  onClick={handleCheckout}
-                  disabled={isCheckingOut}
-                  className="w-full py-4 px-6 bg-[#E0A996] hover:bg-[#CF9581] text-[#2C2523] font-bold rounded-2xl shadow-sm hover:shadow-md transition-all text-xs cursor-pointer flex items-center justify-center gap-2"
-                >
-                  {isCheckingOut ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      {user ? "Place Handcrafted Order" : "Log In to Order"}
-                      <CheckCircle className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 10. CHECKOUT SUCCESS MODAL */}
-      {showContactMethods && checkoutSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2C2523]/50 backdrop-blur-sm">
-          <div className="bg-white border border-[#FBEFEA] w-full max-w-md rounded-3xl p-8 text-center shadow-xl space-y-6">
-            <div className="w-16 h-16 bg-[#96A288]/15 text-[#96A288] flex items-center justify-center rounded-full mx-auto">
-              <CheckCircle className="w-10 h-10" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-2xl font-bold text-[#2C2523] font-serif">
-                Order Received!
-              </h3>
-              <p className="text-sm text-[#4A3728] leading-relaxed">
-                Thank you for your order! Your request has been queued. We will
-                start hand-stitching your items soon.
-              </p>
-              <div className="p-3 bg-[#F5EFEB] rounded-xl font-mono text-xs text-[#2C2523] mt-2">
-                Order ID: {latestOrderId}
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setCheckoutSuccess(false);
-                setIsCartOpen(false);
-              }}
-              className="w-full py-3.5 px-6 bg-[#F5EFEB] hover:bg-[#EBE5E0] text-[#2C2523] font-bold rounded-2xl transition-colors text-xs cursor-pointer"
-            >
-              Continue Shopping
-            </button>
-            <Link
-              href="/my-orders"
-              onClick={() => {
-                setCheckoutSuccess(false);
-                setIsCartOpen(false);
-              }}
-              className="block w-full py-3.5 px-6 bg-[#E0A996] hover:bg-[#CF9581] text-[#2C2523] font-bold rounded-2xl transition-colors text-xs text-center"
-            >
-              View My Orders
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* 11. FLOATING CHAT BUBBLE */}
-      {showContactMethods && (
-        <a
-          href={CONTACT_CONFIG.whatsapp.getLink()}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="fixed bottom-6 right-6 z-40 bg-[#96A288] text-white py-3 px-5 rounded-full flex items-center gap-2 shadow-lg hover:bg-[#818D74] transition-all duration-300 chat-bubble-pulse group hover:scale-105"
-        >
-          <MessageCircle className="w-5 h-5 fill-white" />
-          <span className="text-xs font-bold tracking-wide uppercase">
-            Chat for Custom Orders
-          </span>
-        </a>
       )}
     </div>
   );

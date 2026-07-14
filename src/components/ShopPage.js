@@ -233,73 +233,7 @@ export default function ShopPage({ initialProducts = [] }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FDFBF7]">
-      {/* Header */}
-      <header className="sticky top-0 z-40 w-full bg-[#FDFBF7]/90 backdrop-blur-md border-b border-[#F5EFEB]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <Heart
-              className="w-6 h-6 text-[#E0A996] transition-transform group-hover:scale-110"
-              fill="#E0A996"
-            />
-            <span className="text-xl sm:text-2xl font-bold tracking-tight text-[#2C2523] font-serif">
-              Crochet with Dilru
-            </span>
-          </Link>
 
-          <div className="flex items-center gap-4">
-            {user ? (
-              <div className="flex items-center gap-3 text-sm">
-                <span className="hidden sm:inline-block text-[#4A3728]">
-                  Hello, <strong className="text-[#2C2523]">{user.name}</strong>
-                </span>
-                <Link
-                  href="/my-orders"
-                  className="py-2 px-3.5 bg-[#F5EFEB] hover:bg-[#EBE5E0] text-[#2C2523] font-semibold rounded-full transition-colors text-xs"
-                >
-                  My Orders
-                </Link>
-                {isAdmin && (
-                  <Link
-                    href="/admin"
-                    className="py-2 px-3.5 bg-[#96A288] hover:bg-[#818D74] text-white font-semibold rounded-full transition-colors text-xs"
-                  >
-                    Admin
-                  </Link>
-                )}
-                <button
-                  onClick={async () => {
-                    await signOut();
-                    router.refresh();
-                  }}
-                  className="text-xs font-semibold text-[#4A3728] hover:text-red-600 cursor-pointer underline underline-offset-4"
-                >
-                  Sign Out
-                </button>
-              </div>
-            ) : (
-              <Link
-                href="/login?callbackUrl=/shop"
-                className="text-sm font-semibold text-[#4A3728] hover:text-[#E0A996] transition-colors"
-              >
-                Log In
-              </Link>
-            )}
-
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="relative p-2.5 bg-[#F5EFEB] hover:bg-[#EBE5E0] rounded-full text-[#2C2523] transition-colors cursor-pointer"
-              aria-label="Open Cart"
-            >
-              <ShoppingBag className="w-5.5 h-5.5" />
-              {getCartCount() > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-[#E0A996] text-[#2C2523] text-xxs font-bold rounded-full border-2 border-[#FDFBF7]">
-                  {getCartCount()}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-8">
         {/* Page title */}
@@ -413,7 +347,7 @@ export default function ShopPage({ initialProducts = [] }) {
             <p className="text-sm text-[#4A3728]">Loading collection...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-20 bg-white border border-[#FBEFEA] rounded-2xl">
+          <div className="text-center py-20 bg-white border border-[#FBEFEA] rounded-]">
             <ShoppingBag className="w-12 h-12 mx-auto text-[#A0958F] mb-4" />
             <h3 className="text-lg font-semibold text-[#2C2523] font-serif">
               No products found
@@ -435,7 +369,7 @@ export default function ShopPage({ initialProducts = [] }) {
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="group boutique-card flex flex-col overflow-hidden rounded-[1.4rem] transition-all duration-300 hover:-translate-y-1"
+                className="group boutique-card flex flex-col overflow-hidden  transition-all duration-300 hover:-translate-y-1"
               >
                 <div className="relative aspect-square overflow-hidden bg-[#F5EFEB]">
                   <img

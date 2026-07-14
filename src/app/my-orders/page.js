@@ -47,7 +47,8 @@ function getStatusIcon(status) {
 
 export default function MyOrdersPage() {
   const router = useRouter();
-  const { user, orders, loading, ordersLoading, isAuthenticated, fetchOrders } = useAuth();
+  const { user, orders, loading, ordersLoading, isAuthenticated, fetchOrders } =
+    useAuth();
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -72,25 +73,11 @@ export default function MyOrdersPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
-      <header className="sticky top-0 z-40 w-full bg-[#FDFBF7]/90 backdrop-blur-md border-b border-[#F5EFEB]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <Heart className="w-5 h-5 text-[#E0A996]" fill="#E0A996" />
-            <span className="text-lg font-bold text-[#2C2523] font-serif">Crochet with Dilru</span>
-          </Link>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4A3728] hover:text-[#E0A996] transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Store
-          </Link>
-        </div>
-      </header>
-
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#2C2523] font-serif">My Orders</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#2C2523] font-serif">
+            My Orders
+          </h1>
           <p className="text-xs text-[#A0958F] mt-1">
             Track your handcrafted orders, {user.name}.
           </p>
@@ -99,14 +86,19 @@ export default function MyOrdersPage() {
         {ordersLoading ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white border border-[#FBEFEA] rounded-2xl">
             <Loader2 className="w-8 h-8 animate-spin text-[#E0A996] mb-3" />
-            <p className="text-xs text-[#4A3728]">Fetching your order history...</p>
+            <p className="text-xs text-[#4A3728]">
+              Fetching your order history...
+            </p>
           </div>
         ) : orders.length === 0 ? (
           <div className="text-center py-16 bg-white border border-[#FBEFEA] rounded-2xl">
             <Receipt className="w-12 h-12 mx-auto text-[#A0958F] mb-4" />
-            <h3 className="text-lg font-semibold text-[#2C2523] font-serif">No orders yet</h3>
+            <h3 className="text-lg font-semibold text-[#2C2523] font-serif">
+              No orders yet
+            </h3>
             <p className="text-sm text-[#4A3728] mt-1 mb-6">
-              When you place an order, it will appear here with live status updates.
+              When you place an order, it will appear here with live status
+              updates.
             </p>
             <Link
               href="/shop"
@@ -130,29 +122,44 @@ export default function MyOrdersPage() {
                 </thead>
                 <tbody className="divide-y divide-[#F5EFEB] text-xs text-[#4A3728]">
                   {orders.map((order) => (
-                    <tr key={order.id} className="hover:bg-[#FDFBF7]/50 transition-colors">
+                    <tr
+                      key={order.id}
+                      className="hover:bg-[#FDFBF7]/50 transition-colors"
+                    >
                       <td className="px-6 py-4 font-mono font-semibold text-[#2C2523] truncate max-w-[140px]">
                         {order.id}
                       </td>
                       <td className="px-6 py-4 text-xxs text-[#A0958F] whitespace-nowrap">
                         {order.createdAt
-                          ? new Date(order.createdAt).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })
+                          ? new Date(order.createdAt).toLocaleDateString(
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              },
+                            )
                           : "N/A"}
                       </td>
                       <td className="px-6 py-4">
                         <div className="space-y-1 max-w-[240px]">
                           {order.items?.map((item, idx) => (
                             <div key={idx} className="text-xxs">
-                              <span className="font-semibold text-[#2C2523]">{item.name}</span>
-                              <span className="text-[#A0958F]"> × {item.quantity}</span>
+                              <span className="font-semibold text-[#2C2523]">
+                                {item.name}
+                              </span>
+                              <span className="text-[#A0958F]">
+                                {" "}
+                                × {item.quantity}
+                              </span>
                               {(item.yarnColor || item.size) && (
                                 <div className="text-[#A0958F]">
-                                  {item.yarnColor && <span>{item.yarnColor}</span>}
-                                  {item.yarnColor && item.size && <span> · </span>}
+                                  {item.yarnColor && (
+                                    <span>{item.yarnColor}</span>
+                                  )}
+                                  {item.yarnColor && item.size && (
+                                    <span> · </span>
+                                  )}
                                   {item.size && <span>{item.size}</span>}
                                 </div>
                               )}
@@ -166,7 +173,7 @@ export default function MyOrdersPage() {
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xxs font-bold border ${getStatusStyle(
-                            order.status
+                            order.status,
                           )}`}
                         >
                           {getStatusIcon(order.status)}

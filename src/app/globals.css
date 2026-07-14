@@ -118,12 +118,167 @@ body {
   pointer-events: none;
 }
 
-.section-shell {
-  border: 1px solid rgba(224, 169, 150, 0.16);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 251, 247, 0.96),
-    rgba(248, 239, 232, 0.88)
+.hero-ornament::before,
+.hero-ornament::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(14px);
+}
+
+.hero-ornament::before {
+  width: 7rem;
+  height: 7rem;
+  right: -1rem;
+  bottom: -1rem;
+  background: radial-gradient(
+    circle,
+    rgba(150, 162, 136, 0.24),
+    transparent 72%
   );
-  box-shadow: 0 16px 40px -24px rgba(44, 37, 35, 0.18);
+}
+
+.hero-ornament::after {
+  width: 6rem;
+  height: 6rem;
+  left: 0;
+  top: 1rem;
+  background: radial-gradient(
+    circle,
+    rgba(228, 160, 160, 0.16),
+    transparent 72%
+  );
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer-text {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.reveal-card {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.75s ease-out,
+    transform 0.75s ease-out;
+}
+
+.reveal-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-card:nth-child(1) {
+  transition-delay: 0.1s;
+}
+
+.reveal-card:nth-child(2) {
+  transition-delay: 0.2s;
+}
+
+.reveal-card:nth-child(3) {
+  transition-delay: 0.3s;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.9s ease-out both;
+}
+
+.text-glow {
+  background: linear-gradient(90deg, #e0a996, #cf9581, #e4a0a0);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  display: inline-block;
+  position: relative;
+}
+
+.text-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba(255, 255, 255, 0.35),
+    transparent 40%
+  );
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.text-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(224, 169, 150, 0.95),
+    rgba(255, 255, 255, 0.9),
+    rgba(224, 169, 150, 0.95)
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-text 4s linear infinite;
+}
+
+.gradient-card {
+  border: 1px solid rgba(224, 169, 150, 0.22);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 250, 245, 0.96),
+    rgba(252, 244, 236, 0.86)
+  );
+  box-shadow:
+    0 24px 60px -34px rgba(44, 37, 35, 0.28),
+    0 6px 20px -18px rgba(224, 169, 150, 0.45);
+}
+
+.gradient-border {
+  border-image: linear-gradient(135deg, #e0a996, #cf9581, #e4a0a0) 1;
+}
+
+.glow-panel {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.96),
+    rgba(245, 239, 235, 0.92)
+  );
+  border: 1px solid rgba(224, 169, 150, 0.18);
+  box-shadow: 0 18px 50px -28px rgba(44, 37, 35, 0.2);
+}
+
+.subtle-glow {
+  position: relative;
+}
+
+.subtle-glow::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at top left,
+    rgba(224, 169, 150, 0.2),
+    transparent 45%
+  );
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.gradient-button {
+  box-shadow: 0 18px 35px -18px rgba(224, 169, 150, 0.5);
 }

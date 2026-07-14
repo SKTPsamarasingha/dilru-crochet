@@ -1,6 +1,7 @@
 import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import Navbar from "@/components/Navbar";
 
 const playfair = Playfair_Display({
   variable: "--font-serif",
@@ -26,7 +27,10 @@ export default function RootLayout({ children }) {
       className={`${playfair.variable} ${plusJakarta.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#FDFBF7] text-[#2C2523] font-sans">
-        <Providers>{children}</Providers>
+        <Providers>
+          <Navbar />
+          {children}
+        </Providers>
       </body>
     </html>
   );
