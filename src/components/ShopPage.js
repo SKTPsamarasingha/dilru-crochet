@@ -233,8 +233,6 @@ export default function ShopPage({ initialProducts = [] }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FDFBF7]">
-
-
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-8">
         {/* Page title */}
         <div className="section-shell rounded-[2rem] p-5 sm:p-6">
@@ -369,9 +367,9 @@ export default function ShopPage({ initialProducts = [] }) {
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="group boutique-card flex flex-col overflow-hidden  transition-all duration-300 hover:-translate-y-1"
+                className="group boutique-card flex flex-col overflow-hidden rounded-[1.4rem] border border-[#F5EFEB] bg-white transition-all duration-300 hover:-translate-y-1"
               >
-                <div className="relative aspect-square overflow-hidden bg-[#F5EFEB]">
+                <div className="relative aspect-[4/5] overflow-hidden bg-[#F5EFEB]">
                   <img
                     src={product.image}
                     alt={product.name}
@@ -388,25 +386,21 @@ export default function ShopPage({ initialProducts = [] }) {
                     </span>
                   )}
                 </div>
-                <div className="p-5 flex flex-col flex-grow">
-                  <span className="text-[10px] font-bold text-[#96A288] uppercase tracking-wide mb-1">
-                    {product.category}
-                  </span>
-                  <div className="flex justify-between items-start mb-2 gap-2">
-                    <h3 className="font-bold text-[#2C2523] group-hover:text-[#E0A996] transition-colors leading-tight text-base font-serif">
-                      {product.name}
-                    </h3>
-                    <span className="font-bold text-[#2C2523] whitespace-nowrap text-sm bg-[#F5EFEB] py-0.5 px-2 rounded-lg">
-                      ${product.price.toFixed(2)}
-                    </span>
+                <div className="flex flex-grow flex-col justify-between p-5">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-bold text-[#2C2523] group-hover:text-[#E0A996] transition-colors leading-tight text-base font-serif">
+                        {product.name}
+                      </h3>
+                      <span className="font-bold text-[#2C2523] whitespace-nowrap text-sm bg-[#F5EFEB] py-0.5 px-2 rounded-lg">
+                        ${product.price.toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-xs text-[#4A3728] line-clamp-2 mb-4 leading-relaxed flex-grow">
-                    {product.description}
-                  </p>
                   <button
                     onClick={() => openProduct(product)}
                     disabled={(product.stock ?? 0) === 0}
-                    className="w-full py-2.5 px-4 bg-[#F5EFEB] hover:bg-[#E0A996] hover:text-[#2C2523] text-[#2C2523] font-semibold rounded-xl transition-all text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="mt-4 w-full py-2.5 px-4 bg-[#F5EFEB] hover:bg-[#E0A996] hover:text-[#2C2523] text-[#2C2523] font-semibold rounded-xl transition-all text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {(product.stock ?? 0) === 0
                       ? "Out of Stock"

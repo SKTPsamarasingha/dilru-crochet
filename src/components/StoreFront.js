@@ -32,7 +32,7 @@ import {
   ShoppingBag as CartIcon,
 } from "lucide-react";
 
-   function FacebookIcon({ className = "w-5 h-5" }) {
+function FacebookIcon({ className = "w-5 h-5" }) {
   return (
     <svg
       className={className}
@@ -115,11 +115,11 @@ export default function StoreFront({ initialProducts }) {
   if (maintenanceMode) {
     return (
       <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center px-4 py-16">
-        <div className="max-w-xl rounded-3xl border border-[#E0A996]/30 bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#E0A996]/15 text-[#E0A996]">
+        <div className="max-w-xl rounded-3xl border border-[var(--color-primary)]/30 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)]">
             <Sparkles className="h-7 w-7" />
           </div>
-          <h1 className="font-serif text-2xl font-bold text-[#2C2523]">
+          <h1 className="font-serif text-2xl font-bold text-[var(--color-foreground)]">
             We&apos;re updating the boutique
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-[#4A3728]">
@@ -136,7 +136,13 @@ export default function StoreFront({ initialProducts }) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <main className="flex-1">
+      <main
+        className="flex-1"
+        style={{
+          "--color-foreground": "#2c2523",
+          "--color-primary": "#e0a996",
+        }}
+      >
         {/* 2. HERO SECTION */}
         <section className="relative overflow-hidden border-b border-[#F5EFEB] py-16 sm:py-24 bg-[radial-gradient(circle_at_top_left,_rgba(224,169,150,0.16),_transparent_38%),linear-gradient(135deg,_#fdfbf7_0%,_#fcf5ee_100%)]">
           <div className="hero-ornament" />
@@ -148,11 +154,11 @@ export default function StoreFront({ initialProducts }) {
                   <Sparkles className="h-3.5 w-3.5" />
                   Slow-made crochet, island crafted
                 </div>
-                <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-[#2C2523] font-serif sm:text-5xl lg:text-6xl animate-fade-in-up">
+                <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-[var(--color-foreground)] font-serif sm:text-5xl lg:text-6xl animate-fade-in-up">
                   <span className="block text-glow text-5xl sm:text-6xl lg:text-7xl">
                     Handmade warmth
                   </span>
-                  <span className="block text-[#2C2523] mt-4">
+                  <span className="block text-[var(--color-foreground)] mt-4">
                     made to wear and treasure.
                   </span>
                 </h1>
@@ -167,7 +173,7 @@ export default function StoreFront({ initialProducts }) {
                 <div className="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
                   <Link
                     href="/shop"
-                    className="rounded-full bg-gradient-to-r from-[#E0A996] via-[#F0B290] to-[#E4A0A0] px-8 py-4 text-center text-sm font-bold text-[#2C2523] shadow-[0_24px_40px_-22px_rgba(224,169,150,0.65)] transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_28px_45px_-24px_rgba(224,169,150,0.8)]"
+                    className="rounded-full bg-gradient-to-r from-[var(--color-primary)] via-[#F0B290] to-[#E4A0A0] px-8 py-4 text-center text-sm font-bold text-[var(--color-foreground)] shadow-[0_24px_40px_-22px_rgba(224,169,150,0.65)] transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_28px_45px_-24px_rgba(224,169,150,0.8)]"
                   >
                     Browse Collection
                   </Link>
@@ -175,7 +181,7 @@ export default function StoreFront({ initialProducts }) {
                     href="https://web.facebook.com/p/Crochet-with-dilru-61553942184584/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#E0A996] bg-white/90 px-8 py-4 text-center text-sm font-bold text-[#2C2523] shadow-[0_10px_35px_-24px_rgba(224,169,150,0.5)] transition-all duration-300 hover:bg-[#E0A996]/15 hover:shadow-[0_18px_40px_-24px_rgba(224,169,150,0.7)]"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--color-primary)] bg-white/90 px-8 py-4 text-center text-sm font-bold text-[var(--color-foreground)] shadow-[0_10px_35px_-24px_rgba(224,169,150,0.5)] transition-all duration-300 hover:bg-[var(--color-primary)]/15 hover:shadow-[0_18px_40px_-24px_rgba(224,169,150,0.7)]"
                   >
                     Request Custom Order
                     <ExternalLink className="h-4 w-4" />
@@ -190,10 +196,10 @@ export default function StoreFront({ initialProducts }) {
                     alt="Handmade crochet stitch detail cardigan"
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute bottom-4 right-4 py-2.5 px-4 bg-white/95 backdrop-blur-sm rounded-2xl shadow-sm text-xs font-bold text-[#2C2523] border border-[#FBEFEA] flex items-center gap-1.5">
+                  <div className="absolute bottom-4 right-4 py-2.5 px-4 bg-white/95 backdrop-blur-sm rounded-2xl shadow-sm text-xs font-bold text-[var(--color-foreground)] border border-[#FBEFEA] flex items-center gap-1.5">
                     <Heart
-                      className="w-3.5 h-3.5 text-[#E0A996]"
-                      fill="#E0A996"
+                      className="w-3.5 h-3.5 text-[var(--color-primary)]"
+                      fill="var(--color-primary)"
                     />
                     Stitched by Hand
                   </div>
@@ -206,11 +212,11 @@ export default function StoreFront({ initialProducts }) {
         {/* 3. HOW IT WORKS */}
         <section
           id="how-it-works"
-          className="py-16 bg-[#FDFBF7]/50 border-b border-[#F5EFEB]"
+          className="bg-primary  py-16 bg-[#FDFBF7]/50 border-b border-[#F5EFEB]"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#2C2523] font-serif">
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--color-foreground)] font-serif">
                 How It Works
               </h2>
               <p className="mt-3 text-[#4A3728] text-sm sm:text-base">
@@ -221,10 +227,10 @@ export default function StoreFront({ initialProducts }) {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
               <div className="how-card boutique-card gradient-card subtle-glow flex flex-col items-center rounded-[1.5rem] p-6 text-center hover-lift reveal-card">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E0A996]/18 text-[#E0A996] shadow-[0_18px_40px_-28px_rgba(224,169,150,0.55)]">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--color-primary)]/18 text-[var(--color-primary)] shadow-[0_18px_40px_-28px_rgba(224,169,150,0.55)]">
                   <Sparkles className="w-7 h-7" />
                 </div>
-                <h3 className="text-lg font-bold text-[#2C2523] mb-2 font-serif">
+                <h3 className="text-lg font-bold text-[var(--color-foreground)] mb-2 font-serif">
                   1. Pick Your Design
                 </h3>
                 <p className="text-sm text-[#4A3728] leading-relaxed">
@@ -237,7 +243,7 @@ export default function StoreFront({ initialProducts }) {
                 <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#96A288]/18 text-[#96A288] shadow-[0_18px_40px_-28px_rgba(150,162,136,0.45)]">
                   <Scissors className="w-7 h-7" />
                 </div>
-                <h3 className="text-lg font-bold text-[#2C2523] mb-2 font-serif">
+                <h3 className="text-lg font-bold text-[var(--color-foreground)] mb-2 font-serif">
                   2. Customize Details
                 </h3>
                 <p className="text-sm text-[#4A3728] leading-relaxed">
@@ -250,7 +256,7 @@ export default function StoreFront({ initialProducts }) {
                 <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E4A0A0]/18 text-[#E4A0A0] shadow-[0_18px_40px_-28px_rgba(228,160,160,0.45)]">
                   <Truck className="w-7 h-7" />
                 </div>
-                <h3 className="text-lg font-bold text-[#2C2523] mb-2 font-serif">
+                <h3 className="text-lg font-bold text-[var(--color-foreground)] mb-2 font-serif">
                   3. Handcrafted Delivery
                 </h3>
                 <p className="text-sm text-[#4A3728] leading-relaxed">
@@ -270,7 +276,7 @@ export default function StoreFront({ initialProducts }) {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row justify-between items-center mb-12 gap-4 text-center sm:text-left">
               <div>
-                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#2C2523] font-serif">
+                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--color-foreground)] font-serif">
                   Featured Creations
                 </h2>
                 <p className="mt-2 text-[#4A3728] text-sm">
@@ -280,7 +286,7 @@ export default function StoreFront({ initialProducts }) {
               </div>
               <Link
                 href="/shop"
-                className="py-2.5 px-5 rounded-full bg-gradient-to-r from-[#E0A996] via-[#F0B290] to-[#E4A0A0] text-[#2C2523] font-semibold text-xs transition-transform duration-300 hover:scale-[1.01] shadow-[0_22px_35px_-22px_rgba(224,169,150,0.72)]"
+                className="py-2.5 px-5 rounded-full bg-gradient-to-r from-[var(--color-primary)] via-[#F0B290] to-[#E4A0A0] text-[var(--color-foreground)] font-semibold text-xs transition-transform duration-300 hover:scale-[1.01] shadow-[0_22px_35px_-22px_rgba(224,169,150,0.72)]"
               >
                 View Full Shop →
               </Link>
@@ -289,7 +295,7 @@ export default function StoreFront({ initialProducts }) {
             {products.length === 0 ? (
               <div className="text-center py-20 bg-white border border-[#F5EFEB] rounded-3xl">
                 <CartIcon className="w-12 h-12 mx-auto text-[#A0958F] mb-4" />
-                <h3 className="text-lg font-semibold text-[#2C2523] font-serif">
+                <h3 className="text-lg font-semibold text-[var(--color-foreground)] font-serif">
                   The catalog is being refreshed
                 </h3>
                 <p className="text-sm text-[#4A3728] mt-1 mb-4">
@@ -305,7 +311,7 @@ export default function StoreFront({ initialProducts }) {
                       window.location.reload();
                     }
                   }}
-                  className="py-2.5 px-6 bg-[#E0A996] hover:bg-[#CF9581] text-[#2C2523] font-semibold rounded-full text-sm"
+                  className="py-2.5 px-6 bg-[var(--color-primary)] hover:bg-[#CF9581] text-[var(--color-foreground)] font-semibold rounded-full text-sm"
                 >
                   Seed Database Items
                 </button>
@@ -319,7 +325,7 @@ export default function StoreFront({ initialProducts }) {
                       className="group boutique-card flex h-full flex-col overflow-hidden rounded-[1.4rem] transition-all duration-300 hover:-translate-y-1"
                     >
                       {/* Image Container with hover zoom */}
-                      <div className="relative aspect-square overflow-hidden bg-[#F5EFEB]">
+                      <div className="relative aspect-[4/5] overflow-hidden bg-[#F5EFEB]">
                         <img
                           src={product.image}
                           alt={product.name}
@@ -332,19 +338,18 @@ export default function StoreFront({ initialProducts }) {
                         )}
                       </div>
 
-                      <div className="flex flex-grow flex-col p-5">
-                        <div className="flex justify-between items-start mb-2 gap-2">
-                          <h3 className="font-bold text-[#2C2523] group-hover:text-[#E0A996] transition-colors leading-tight text-base font-serif">
-                            {product.name}
-                          </h3>
-                          <PriceBadge
-                            price={product.price}
-                            showLKRPrices={showLKRPrices}
-                          />
+                      <div className="flex flex-grow flex-col justify-between p-5">
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-bold text-[var(--color-foreground)] group-hover:text-[var(--color-primary)] transition-colors leading-tight text-base font-serif">
+                              {product.name}
+                            </h3>
+                            <PriceBadge
+                              price={product.price}
+                              showLKRPrices={showLKRPrices}
+                            />
+                          </div>
                         </div>
-                        <p className="mb-4 flex-grow text-xs leading-relaxed text-[#4A3728] line-clamp-2">
-                          {product.description}
-                        </p>
 
                         <button
                           onClick={() => {
@@ -355,7 +360,7 @@ export default function StoreFront({ initialProducts }) {
                             );
                             setQuantity(1);
                           }}
-                          className="w-full py-2.5 px-4 bg-[#F5EFEB] hover:bg-[#E0A996] hover:text-[#2C2523] text-[#2C2523] font-semibold rounded-xl transition-all duration-200 text-xs text-center cursor-pointer"
+                          className="mt-4 w-full py-2.5 px-4 bg-[#F5EFEB] hover:bg-[var(--color-primary)] hover:text-[var(--color-foreground)] text-[var(--color-foreground)] font-semibold rounded-xl transition-all duration-200 text-xs text-center cursor-pointer"
                         >
                           View Details
                         </button>
@@ -363,11 +368,12 @@ export default function StoreFront({ initialProducts }) {
                     </div>
                   ))}
                 </div>
+
                 {products.length > 4 && (
                   <div className="text-center mt-10">
                     <Link
                       href="/shop"
-                      className="inline-flex py-3 px-8 bg-[#F5EFEB] hover:bg-[#E0A996] text-[#2C2523] font-semibold rounded-full text-sm transition-colors"
+                      className="inline-flex py-3 px-8 bg-[#F5EFEB] hover:bg-[var(--color-primary)] text-[var(--color-foreground)] font-semibold rounded-full text-sm transition-colors"
                     >
                       See all {products.length} products
                     </Link>
@@ -381,7 +387,7 @@ export default function StoreFront({ initialProducts }) {
         {/* 5. ABOUT SECTION */}
         <section
           id="about"
-          className="border-t border-b border-[#F5EFEB] bg-[linear-gradient(135deg,_rgba(245,239,235,0.6)_0%,_rgba(253,251,247,0.95)_100%)] py-16 sm:py-24"
+          className="bg-primary border-t border-b border-[#F5EFEB]  py-16 sm:py-24"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -393,10 +399,11 @@ export default function StoreFront({ initialProducts }) {
                 />
               </div>
               <div className="space-y-6">
-                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#E0A996]">
-                  <Heart className="w-3.5 h-3.5" fill="#E0A996" /> Our Story
+                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-primary)]">
+                  <Heart className="w-3.5 h-3.5" fill="var(--color-primary)" />{" "}
+                  Our Story
                 </div>
-                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#2C2523] font-serif">
+                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--color-foreground)] font-serif">
                   Every Stitch Tells a Story
                 </h2>
                 <p className="text-[#4A3728] text-sm sm:text-base leading-relaxed">
@@ -414,13 +421,13 @@ export default function StoreFront({ initialProducts }) {
                 </p>
                 <div className="pt-4 border-t border-[#EBE5E0] grid grid-cols-2 gap-6">
                   <div>
-                    <h4 className="text-2xl font-bold text-[#2C2523] font-serif">
+                    <h4 className="text-2xl font-bold text-[var(--color-foreground)] font-serif">
                       100%
                     </h4>
                     <p className="text-xs text-[#4A3728]">Handcrafted Items</p>
                   </div>
                   <div>
-                    <h4 className="text-2xl font-bold text-[#2C2523] font-serif">
+                    <h4 className="text-2xl font-bold text-[var(--color-foreground)] font-serif">
                       No Waste
                     </h4>
                     <p className="text-xs text-[#4A3728]">
@@ -437,12 +444,12 @@ export default function StoreFront({ initialProducts }) {
         <section id="community" className="py-16 bg-[#FDFBF7]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-12">
-              <h2 className="text-3xl font-bold tracking-tight text-[#2C2523] font-serif">
+              <h2 className="text-3xl font-bold tracking-tight text-[var(--color-foreground)] font-serif">
                 Made for Our Community
               </h2>
               <p className="mt-2 text-[#4A3728] text-sm">
                 Tag{" "}
-                <span className="font-semibold text-[#E0A996]">
+                <span className="font-semibold text-[var(--color-primary)]">
                   @crochet_with_dilru
                 </span>{" "}
                 on social media to get featured!
@@ -503,7 +510,7 @@ export default function StoreFront({ initialProducts }) {
           <div className="bg-white border border-[#FBEFEA] w-full max-w-2xl rounded-3xl overflow-hidden shadow-xl max-h-[90vh] flex flex-col sm:flex-row relative">
             <button
               onClick={() => setSelectedProduct(null)}
-              className="absolute top-4 right-4 p-2 bg-white/90 rounded-full hover:bg-red-50 text-[#2C2523] hover:text-red-500 transition-colors z-10 cursor-pointer shadow-sm"
+              className="absolute top-4 right-4 p-2 bg-white/90 rounded-full hover:bg-red-50 text-[var(--color-foreground)] hover:text-red-500 transition-colors z-10 cursor-pointer shadow-sm"
               aria-label="Close details"
             >
               <X className="w-5 h-5" />
@@ -523,7 +530,7 @@ export default function StoreFront({ initialProducts }) {
               <span className="text-[#96A288] text-xxs font-bold uppercase tracking-wider mb-1 block">
                 {selectedProduct.category}
               </span>
-              <h3 className="text-2xl font-bold text-[#2C2523] mb-2 font-serif leading-tight">
+              <h3 className="text-2xl font-bold text-[var(--color-foreground)] mb-2 font-serif leading-tight">
                 {selectedProduct.name}
               </h3>
               <div className="flex items-center gap-3 mb-4">
@@ -547,7 +554,7 @@ export default function StoreFront({ initialProducts }) {
               {selectedProduct.customizable ? (
                 <div className="space-y-5 mb-6 border-t border-[#F5EFEB] pt-4">
                   <div>
-                    <label className="block text-xxs font-bold text-[#2C2523] uppercase tracking-wide mb-2">
+                    <label className="block text-xxs font-bold text-[var(--color-foreground)] uppercase tracking-wide mb-2">
                       Color
                     </label>
                     <div className="flex flex-wrap items-center gap-3">
@@ -563,7 +570,7 @@ export default function StoreFront({ initialProducts }) {
                           <span
                             className={`block w-9 h-9 rounded-full border-2 shadow-sm transition-all ${
                               customYarnColor === color.name
-                                ? "border-[#E0A996] ring-2 ring-[#E0A996]/30 scale-110"
+                                ? "border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/30 scale-110"
                                 : "border-white ring-1 ring-[#EBE5E0] hover:ring-[#A0958F] hover:scale-105"
                             }`}
                             style={{ backgroundColor: color.hex }}
@@ -574,7 +581,7 @@ export default function StoreFront({ initialProducts }) {
                   </div>
 
                   <div>
-                    <label className="block text-xxs font-bold text-[#2C2523] uppercase tracking-wide mb-2">
+                    <label className="block text-xxs font-bold text-[var(--color-foreground)] uppercase tracking-wide mb-2">
                       Size
                     </label>
                     <div className="flex gap-2">
@@ -585,7 +592,7 @@ export default function StoreFront({ initialProducts }) {
                           onClick={() => setCustomSize(size)}
                           className={`w-10 h-10 text-xs font-bold border rounded-xl transition-colors cursor-pointer ${
                             customSize === size
-                              ? "border-[#E0A996] bg-[#E0A996] text-[#2C2523]"
+                              ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-foreground)]"
                               : "border-[#EBE5E0] bg-[#FDFBF7] text-[#4A3728] hover:border-[#A0958F]"
                           }`}
                         >
@@ -605,22 +612,22 @@ export default function StoreFront({ initialProducts }) {
               {/* Quantity & Add button */}
               <div className="mt-auto border-t border-[#F5EFEB] pt-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[#2C2523]">
+                  <span className="text-xs font-semibold text-[var(--color-foreground)]">
                     Quantity
                   </span>
                   <div className="flex items-center gap-3 border border-[#EBE5E0] rounded-xl px-2 py-1 bg-[#FDFBF7]">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="p-1 text-[#4A3728] hover:text-[#E0A996]"
+                      className="p-1 text-[#4A3728] hover:text-[var(--color-primary)]"
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="text-sm font-bold w-4 text-center text-[#2C2523]">
+                    <span className="text-sm font-bold w-4 text-center text-[var(--color-foreground)]">
                       {quantity}
                     </span>
                     <button
                       onClick={() => setQuantity(quantity + 1)}
-                      className="p-1 text-[#4A3728] hover:text-[#E0A996]"
+                      className="p-1 text-[#4A3728] hover:text-[var(--color-primary)]"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
@@ -641,7 +648,7 @@ export default function StoreFront({ initialProducts }) {
                     );
                     setSelectedProduct(null); // Close modal
                   }}
-                  className="w-full py-3.5 px-6 bg-[#E0A996] hover:bg-[#CF9581] text-[#2C2523] font-bold rounded-2xl shadow-sm hover:shadow-md transition-all text-xs cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full py-3.5 px-6 bg-[var(--color-primary)] hover:bg-[#CF9581] text-[var(--color-foreground)] font-bold rounded-2xl shadow-sm hover:shadow-md transition-all text-xs cursor-pointer flex items-center justify-center gap-2"
                 >
                   <ShoppingBag className="w-4 h-4" />
                   Add to Custom Cart

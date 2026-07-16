@@ -98,6 +98,14 @@ export default function Footer() {
                   Community stories
                 </a>
               </li>
+              <li>
+                <Link
+                  href="/return-policy"
+                  className="transition-colors hover:text-white"
+                >
+                  Return policy
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -110,7 +118,6 @@ export default function Footer() {
               occasion pieces.
             </p>
             <div className="flex flex-wrap gap-2">
-           
               {CONTACT_CONFIG.facebook.enabled && (
                 <a
                   href={CONTACT_CONFIG.facebook.getMessengerLink()}
