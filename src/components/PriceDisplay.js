@@ -34,12 +34,12 @@ export function PriceDisplay({
   };
 
   return (
-    <div className={`flex items-center gap-1 ${className}`}>
-      <span className={`font-semibold ${sizeClasses[size]} text-[#2C2523]`}>
+    <div className={`flex items-center gap-1.5 ${className}`}>
+      <span className={`font-semibold ${sizeClasses[size]} text-foreground`}>
         {formatPrice(price, "USD")}
       </span>
       {showConversion && showLKRPrices && (
-        <span className={`${sizeClasses[size]} text-[#A0958F]`}>
+        <span className={`${sizeClasses[size] === "text-lg font-bold" ? "text-xs" : "text-xxs"} text-espresso-light/75 font-medium`}>
           ({formatPrice((price * 330).toFixed(0), "LKR")})
         </span>
       )}
@@ -55,7 +55,7 @@ export function PriceBadge({ price, showLKRPrices = true }) {
   const { formatPrice } = usePriceFormatter();
 
   return (
-    <span className="font-bold text-[#2C2523] whitespace-nowrap text-sm bg-[#F5EFEB] py-0.5 px-2 rounded-lg hover:bg-[#E0A996]/20 transition-colors">
+    <span className="font-bold text-foreground whitespace-nowrap text-sm bg-beige py-1 px-3 rounded-full hover:bg-primary/20 transition-all duration-300">
       {formatPrice(price, "USD")}
     </span>
   );
@@ -78,35 +78,35 @@ export function CheckoutSummary({
   const shouldShowLKR = showLKR && showLKRPrices;
 
   return (
-    <div className="space-y-3 bg-[#FDFBF7] p-4 rounded-xl border border-[#EBE5E0]">
+    <div className="space-y-3 bg-[#FFFBF7] p-5 rounded-2xl border border-beige shadow-sm">
       {/* Subtotal */}
       <div className="flex justify-between items-center">
-        <span className="text-sm text-[#4A3728]">Subtotal</span>
+        <span className="text-sm text-espresso-light font-medium">Subtotal</span>
         <div className="text-right">
-          <p className="font-semibold text-[#2C2523]">{subtotalPrices.usd}</p>
+          <p className="font-semibold text-foreground">{subtotalPrices.usd}</p>
           {shouldShowLKR && subtotalPrices.lkr && (
-            <p className="text-xs text-[#A0958F]">{subtotalPrices.lkr}</p>
+            <p className="text-xxs text-espresso-light/70 font-medium">{subtotalPrices.lkr}</p>
           )}
         </div>
       </div>
 
       {/* Delivery */}
-      <div className="flex justify-between items-center border-t border-[#EBE5E0] pt-3">
+      <div className="flex justify-between items-center border-t border-beige pt-3">
         {deliveryFee > 0 ? (
           <>
-            <span className="text-sm text-[#4A3728]">Delivery</span>
+            <span className="text-sm text-espresso-light font-medium">Delivery</span>
             <div className="text-right">
-              <p className="font-semibold text-[#2C2523]">
+              <p className="font-semibold text-foreground">
                 {deliveryPrices.usd}
               </p>
               {shouldShowLKR && deliveryPrices.lkr && (
-                <p className="text-xs text-[#A0958F]">{deliveryPrices.lkr}</p>
+                <p className="text-xxs text-espresso-light/70 font-medium">{deliveryPrices.lkr}</p>
               )}
             </div>
           </>
         ) : (
           <div className="flex-1 flex justify-between items-center">
-            <span className="text-sm font-semibold text-green-600">
+            <span className="text-sm font-semibold text-accent">
               ✓ Free Delivery
             </span>
           </div>
@@ -114,12 +114,12 @@ export function CheckoutSummary({
       </div>
 
       {/* Total */}
-      <div className="flex justify-between items-center border-t border-[#E0A996] pt-3">
-        <span className="font-bold text-[#2C2523]">Total</span>
+      <div className="flex justify-between items-center border-t border-primary/20 pt-3">
+        <span className="font-bold text-foreground">Total</span>
         <div className="text-right">
-          <p className="font-bold text-lg text-[#2C2523]">{totalPrices.usd}</p>
+          <p className="font-bold text-lg text-foreground">{totalPrices.usd}</p>
           {shouldShowLKR && totalPrices.lkr && (
-            <p className="text-xs font-semibold text-[#A0958F]">
+            <p className="text-xs font-semibold text-espresso-light/80">
               {totalPrices.lkr}
             </p>
           )}

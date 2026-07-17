@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
-import { CONTACT_CONFIG, CURRENCY_CONFIG, DELIVERY_CONFIG } from "@/lib/config";
-import { useFeatureSettings } from "@/lib/useFeatureSettings";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import {
-  PriceDisplay,
-  PriceBadge,
-  CheckoutSummary,
-} from "@/components/PriceDisplay";
+  motion,
+  useScroll,
+  useTransform,
+  AnimatePresence,
+} from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
+import { CONTACT_CONFIG } from "@/lib/config";
+import { useFeatureSettings } from "@/lib/useFeatureSettings";
+import { PriceDisplay, PriceBadge } from "@/components/PriceDisplay";
 import {
   ShoppingBag,
   Heart,
@@ -21,51 +21,31 @@ import {
   Minus,
   Trash2,
   CheckCircle,
-  Truck,
-  Scissors,
-  MessageCircle,
-  Mail,
-  ExternalLink,
   Info,
   Loader2,
   Sparkles,
-  ShoppingBag as CartIcon,
+  ArrowRight,
+  Eye,
 } from "lucide-react";
 
-function FacebookIcon({ className = "w-5 h-5" }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-    </svg>
-  );
-}
+// ─── Image constants ─────────────────────────────────────────────────────────
 
-function InstagramIcon({ className = "w-5 h-5" }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="5" ry="5" />
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-      <line x1="17.5" y1="6.5" x2="17.5" y2="6.5" />
-    </svg>
-  );
-}
+const IMG_COMMUNITY =
+  "https://scontent.fcmb12-1.fna.fbcdn.net/v/t39.30808-6/618769057_122242081748131406_631698500297129151_n.jpg?stp=dst-jpg_tt6&cstp=mx960x1280&ctp=s960x1280&_nc_cat=104&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeHx9gOLFnJaX_88StVTp0cnnEaupk_4jaicRq6mT_iNqF_B3IL3g_s_89KJMkkkJx5zV3MI2D34CTfcGquMG3ee&_nc_ohc=QCtWXzmSHUAQ7kNvwFnGnfw&_nc_oc=Adpv0ay6GJ6atRMluW_7VUd2DvsDggjBgc9d0HKrfml6HK4aB0QDEkfbRnUwvsvwo1oXcx6oTFdFZolNP8tCoBf1&_nc_zt=23&_nc_ht=scontent.fcmb12-1.fna&_nc_gid=6hJdWdTwtTti0mvezQ404Q&_nc_ss=7b2a8&oh=00_AQDAcueexHLmUyZjqfOAWbRbwGylOwmNlIVP9nTh3TXlnA&oe=6A5FE007";
+const IMG_HERO = "/hero.jpg";
+// "https://scontent.fcmb3-2.fna.fbcdn.net/v/t39.30808-6/732889190_122259144956131406_319818472927283947_n.png?stp=dst-png&cstp=mx851x315&ctp=s851x315&_nc_cat=103&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=cc71e4&_nc_eui2=AeF_5QvpG7cAnHF0Hj4MZbCKQT_Pe5PYfddBP897k9h9182aD7A3Q5WxUp5dUmd92nRd63srLTegZF4iGuBRCswH&_nc_ohc=Ykh6Vlqas3MQ7kNvwFoXs20&_nc_oc=AdqB1Ym-6Sh3mb1As6FAZ2R_37aoSJvT5C-1qOPZJGCeg8T6HLVKcKWhWlWF5OmZkz9a6O9D0LoiDbv5H9hKO-HH&_nc_zt=23&_nc_ht=scontent.fcmb3-2.fna&_nc_gid=4adXfWfuu1OmpqJzYYW8ug&_nc_ss=7b2a8&oh=00_AQCJ4fltK1HrGTBOvFHe2h3rBrxXzmPpvvvoEKQAg_13dQ&oe=6A5FB027";
+const IMG_CARDIGAN =
+  "https://scontent.fcmb12-1.fna.fbcdn.net/v/t39.30808-6/712267326_122256247076131406_7028798248786891449_n.jpg?stp=dst-jpg_tt6&cstp=mx720x960&ctp=s720x960&_nc_cat=100&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeHSQyC8jUW5m-OJBEeDcsng29WmPxvEjzHb1aY_G8SPMcmqnq8NbxQzIL9nI1horMEUjQ_3CSI8Y2iEIN6CtInq&_nc_ohc=WKKR-tXhD-oQ7kNvwFiTw_U&_nc_oc=AdrdsfJJTdVgUNRSlRq9nKA5T0T3fwhuTddEb0xawA1bsdyVJrCUjJoM2PvxmW2x6fdXKmJg0sSkia16chqIALdQ&_nc_zt=23&_nc_ht=scontent.fcmb12-1.fna&_nc_gid=pLIg72oc-uGQtJV6ppSscw&_nc_ss=7b2a8&oh=00_AQARJk3CMyTpoJ1Nt6cUxmzupTgIdHXqNGCgBEAwVAzn6w&oe=6A5FAB29";
+const IMG_TOTE =
+  "https://scontent.fcmb12-1.fna.fbcdn.net/v/t39.30808-6/746171372_122261158652131406_133466072502057137_n.jpg?stp=dst-jpg_tt6&cstp=mx720x960&ctp=s720x960&_nc_cat=109&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeGEXVUM-mIRuXNFe-YxwAUDPqHkaPd00qM-oeRo93TSow4XSMuWY0j5Y5TxxZzwOWL7_wCd4fKpMr8kqAIptgBO&_nc_ohc=dSc7pdo24dwQ7kNvwE7Dge_&_nc_oc=Adpog5jjJdaYFVuFCcoSWvUEBXIEiAVBHqFbKSXxvc5PCPxcgsSmEpP2zunPPo10390C-x7HiZBfdnzWukBQvE_j&_nc_zt=23&_nc_ht=scontent.fcmb12-1.fna&_nc_gid=TO5t92IuoCwAAlTwgKyg9g&_nc_ss=7b2a8&oh=00_AQDSbAT1ukzM2BARxyUNYbS5FyAC8BWwEQfbfuhVn8oRvw&oe=6A5FB7FE";
 
+const IMG_FLOWERS =
+  "https://scontent.fcmb3-2.fna.fbcdn.net/v/t39.30808-6/737075792_122259637562131406_4979094932434952090_n.jpg?stp=cp6_dst-jpg_tt6&cstp=mx720x960&ctp=s720x960&_nc_cat=100&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeFvDdGObAS9WdsRn8hRPiMdVyBsyeW8okdXIGzJ5byiR43LRbMdNLTftca6uFXJCpgIoLKxrc6UdfuXci5YF69W&_nc_ohc=Zg6sUT1rGKEQ7kNvwHNT17D&_nc_oc=AdqYzTVSDX8Emt2Zt9QO8SdH6dYBQfwCI3ICqMQZh4EyeZbZfefutuxDhr3podfIT245Gc3en5bTa_HG5k42sm1g&_nc_zt=23&_nc_ht=scontent.fcmb3-2.fna&_nc_gid=Cn-wB4Hz3osYzV9Fz4KQog&_nc_ss=7b2a8&oh=00_AQCPJ203_kgajKurZ47sxw6w9UnY19DjUJDHCWAbXJmomA&oe=6A5FBF0C";
+const IMG_BEANIE =
+  "https://scontent.fcmb11-3.fna.fbcdn.net/v/t39.30808-6/649970850_122246954552131406_1316847060158297406_n.jpg?stp=c0.169.1536.1536a_dst-jpg_tt6&cstp=mx1536x1536&ctp=s206x206&_nc_cat=109&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=50ad20&_nc_eui2=AeGkW4KkG8mwRA90aFfaSUMTowojHD4dIISjCiMcPh0ghCBNlH0paD4WvdA11bhxxgAYxn18ZAJjuji16W2L3Jx5&_nc_ohc=o0rdHe1t-kIQ7kNvwFy0Mtw&_nc_oc=AdqHJnzo-AEwHKJpFCApd5csx8SM0UhDQ8V2tphJ2_9BhnTKGrvBvxKmFe_beDJJaeRkt61QIBOfLTtram-uLjIY&_nc_zt=23&_nc_ht=scontent.fcmb11-3.fna&_nc_gid=50ZEdY4u4YAD3H-dQFh1UA&_nc_ss=7b2a8&oh=00_AQCm4j67459ZeG7M1yfZc2Y8PDD3HvJ9OK7YfeWxoPBGpg&oe=6A5FD455";
+// ─── Process Steps ──────────────────────────────────────────────────────────
+
+// ─── Customization options ───────────────────────────────────────────────────
 const YARN_COLORS = [
   { name: "Original", hex: "#E8D5C4" },
   { name: "Sage Green", hex: "#96A288" },
@@ -73,591 +53,1244 @@ const YARN_COLORS = [
   { name: "Cream White", hex: "#F5F0E8" },
   { name: "Cocoa Brown", hex: "#8B6914" },
 ];
-
 const SIZES = ["S", "M", "L"];
+
+// ─── Marquee trust pills ─────────────────────────────────────────────────────
+const MARQUEE_ITEMS = [
+  "✦ Handmade in Sri Lanka",
+  "✦ Made to Order",
+  "✦ Premium Yarn",
+  "✦ Custom Sizes",
+  "✦ Islandwide Delivery",
+  "✦ 100% Handcrafted",
+  "✦ Slow Fashion",
+  "✦ Made with Love",
+  "✦ Handmade in Sri Lanka",
+  "✦ Made to Order",
+  "✦ Premium Yarn",
+  "✦ Custom Sizes",
+  "✦ Islandwide Delivery",
+  "✦ 100% Handcrafted",
+];
+
+// ─── Process steps ───────────────────────────────────────────────────────────
+const PROCESS = [
+  {
+    n: "01",
+    title: "Browse",
+    body: "Explore our curated boutique — cardigans, florals, accessories and more.",
+    color: "#D8A7B1",
+  },
+  {
+    n: "02",
+    title: "Customize",
+    body: "Choose your yarn color, size, and any personal details to make it yours.",
+    color: "#A8C3A0",
+  },
+  {
+    n: "03",
+    title: "We Craft",
+    body: "Every stitch is placed by hand with premium yarn and years of artisan skill.",
+    color: "#D8A7B1",
+  },
+  {
+    n: "04",
+    title: "Delivered",
+    body: "Wrapped with care and shipped to your door, islandwide.",
+    color: "#A8C3A0",
+  },
+];
+
+// ─── Fade-up animation variant ───────────────────────────────────────────────
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.65, delay: i * 0.1, ease: "easeOut" },
+  }),
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function StoreFront({ initialProducts }) {
   const router = useRouter();
-  const { user, signOut, fetchOrders, isAdmin } = useAuth();
-  const { settings, loading } = useFeatureSettings();
+  const { user, fetchOrders } = useAuth();
+  const { settings } = useFeatureSettings();
+
   const [products, setProducts] = useState(initialProducts);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [customYarnColor, setCustomYarnColor] = useState("Original");
   const [customSize, setCustomSize] = useState("M");
   const [quantity, setQuantity] = useState(1);
-
-  useEffect(() => {
-    const cards = document.querySelectorAll(".how-card");
-    if (!cards.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries, observerInstance) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-            observerInstance.unobserve(entry.target);
-          }
-        });
-      },
-      {
-        threshold: 0.2,
-      },
-    );
-
-    cards.forEach((card) => observer.observe(card));
-    return () => observer.disconnect();
-  }, []);
+  const [wishlist, setWishlist] = useState([]);
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  const [latestOrderId, setLatestOrderId] = useState("");
 
   const showLKRPrices = settings?.showLKRPrices ?? true;
-  const showContactMethods = settings?.showContactMethods ?? true;
-  const allowDeliveryEditing = settings?.allowDeliveryEditing ?? true;
   const maintenanceMode = settings?.maintenanceMode ?? false;
 
+  // Parallax on hero
+  const heroRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "25%"]);
+
+  // Sync cart from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("dilru_cart");
+      if (saved) setCart(JSON.parse(saved));
+    } catch {}
+
+    const onSync = () => {
+      try {
+        const saved = localStorage.getItem("dilru_cart");
+        if (saved) setCart(JSON.parse(saved));
+      } catch {}
+    };
+    const onAdd = (e) => {
+      const { product, qty, color, size } = e.detail;
+      setCart((prev) => {
+        const id = `${product.id}-${color}-${size}`;
+        const exists = prev.findIndex((i) => i.cartItemId === id);
+        let next = [...prev];
+        if (exists > -1) next[exists].quantity += qty;
+        else
+          next.push({
+            cartItemId: id,
+            productId: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.image,
+            customizable: product.customizable,
+            yarnColor: color,
+            size,
+            quantity: qty,
+          });
+        localStorage.setItem("dilru_cart", JSON.stringify(next));
+        window.dispatchEvent(new Event("sync-cart"));
+        return next;
+      });
+      setIsCartOpen(true);
+    };
+    const onOpenCart = () => setIsCartOpen(true);
+
+    window.addEventListener("sync-cart", onSync);
+    window.addEventListener("add-to-cart", onAdd);
+    window.addEventListener("open-cart", onOpenCart);
+    return () => {
+      window.removeEventListener("sync-cart", onSync);
+      window.removeEventListener("add-to-cart", onAdd);
+      window.removeEventListener("open-cart", onOpenCart);
+    };
+  }, []);
+
+  const saveCart = (newCart) => {
+    setCart(newCart);
+    localStorage.setItem("dilru_cart", JSON.stringify(newCart));
+    window.dispatchEvent(new Event("sync-cart"));
+  };
+
+  const toggleWishlist = (productId, e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setWishlist((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId],
+    );
+  };
+
+  const openProduct = (product) => {
+    setSelectedProduct(product);
+    setCustomYarnColor("Original");
+    setCustomSize(product.customizable ? "M" : "Standard");
+    setQuantity(1);
+  };
+
+  const addToCartFromModal = () => {
+    if (!selectedProduct) return;
+    const id = `${selectedProduct.id}-${customYarnColor}-${customSize}`;
+    const exists = cart.findIndex((i) => i.cartItemId === id);
+    let next = [...cart];
+    if (exists > -1) next[exists].quantity += quantity;
+    else
+      next.push({
+        cartItemId: id,
+        productId: selectedProduct.id,
+        name: selectedProduct.name,
+        price: selectedProduct.price,
+        image: selectedProduct.image,
+        customizable: selectedProduct.customizable,
+        yarnColor: customYarnColor,
+        size: customSize,
+        quantity,
+      });
+    saveCart(next);
+    setSelectedProduct(null);
+    setIsCartOpen(true);
+  };
+
+  const updateQty = (cartItemId, change) => {
+    saveCart(
+      cart
+        .map((i) =>
+          i.cartItemId === cartItemId
+            ? { ...i, quantity: i.quantity + change }
+            : i,
+        )
+        .filter((i) => i.quantity > 0),
+    );
+  };
+  const removeItem = (cartItemId) =>
+    saveCart(cart.filter((i) => i.cartItemId !== cartItemId));
+  const cartTotal = cart.reduce((t, i) => t + i.price * i.quantity, 0);
+  const cartCount = cart.reduce((c, i) => c + i.quantity, 0);
+
+  const handleCheckout = async () => {
+    if (!user) {
+      router.push("/login?callbackUrl=/");
+      return;
+    }
+    setIsCheckingOut(true);
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: cart, total: cartTotal }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setLatestOrderId(data.order.id);
+        setCheckoutSuccess(true);
+        saveCart([]);
+        fetchOrders();
+      } else alert(data.error || "Checkout failed.");
+    } catch {
+      alert("An error occurred.");
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
+
+  // ── Maintenance mode ──────────────────────────────────────────────────────
   if (maintenanceMode) {
     return (
-      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center px-4 py-16">
-        <div className="max-w-xl rounded-3xl border border-[var(--color-primary)]/30 bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)]/15 text-[var(--color-primary)]">
-            <Sparkles className="h-7 w-7" />
+      <div className="min-h-screen bg-[#FFF8F2] flex items-center justify-center px-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-md rounded-3xl border border-[#D8A7B1]/30 bg-white p-10 text-center shadow-sm"
+        >
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#D8A7B1]/15">
+            <Sparkles className="h-7 w-7 text-[#D8A7B1]" />
           </div>
-          <h1 className="font-serif text-2xl font-bold text-[var(--color-foreground)]">
-            We&apos;re updating the boutique
+          <h1 className="font-serif text-2xl font-bold text-[#2B2B2B]">
+            We're updating the boutique
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-[#4A3728]">
-            The storefront is currently in maintenance mode while we refresh our
-            handmade collection and order experience.
+          <p className="mt-3 text-sm leading-relaxed text-[#5A5A5A]">
+            The storefront is in maintenance mode while we refresh our handmade
+            collection.
           </p>
-          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.24em] text-[#96A288]">
+          <p className="mt-4 text-xs font-bold uppercase tracking-[0.24em] text-[#A8C3A0]">
             Please check back soon.
           </p>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <main
-        className="flex-1"
-        style={{
-          "--color-foreground": "#2c2523",
-          "--color-primary": "#e0a996",
-        }}
-      >
-        {/* 2. HERO SECTION */}
-        <section className="relative overflow-hidden border-b border-[#F5EFEB] py-16 sm:py-24 bg-[radial-gradient(circle_at_top_left,_rgba(224,169,150,0.16),_transparent_38%),linear-gradient(135deg,_#fdfbf7_0%,_#fcf5ee_100%)]">
-          <div className="hero-ornament" />
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8">
-              {/* Left text column */}
-              <div className="space-y-6 text-center lg:col-span-7 lg:text-left sm:space-y-8">
-                <div className="boutique-badge inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-[#96A288] shadow-[0_10px_30px_-24px_rgba(150,162,136,0.7)]">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Slow-made crochet, island crafted
-                </div>
-                <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-[var(--color-foreground)] font-serif sm:text-5xl lg:text-6xl animate-fade-in-up">
-                  <span className="block text-glow text-5xl sm:text-6xl lg:text-7xl">
-                    Handmade warmth
-                  </span>
-                  <span className="block text-[var(--color-foreground)] mt-4">
-                    made to wear and treasure.
-                  </span>
-                </h1>
-                <p
-                  className="mx-auto max-w-2xl text-base leading-relaxed text-[#4A3728] sm:text-lg lg:mx-0 animate-fade-in-up"
-                  style={{ animationDelay: "0.2s" }}
-                >
-                  Discover heirloom-quality crochet cardigans, soft accessories,
-                  and floral keepsakes made to order with thoughtful detailing,
-                  rich texture, and a deeply personal finish.
-                </p>
-                <div className="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
-                  <Link
-                    href="/shop"
-                    className="rounded-full bg-gradient-to-r from-[var(--color-primary)] via-[#F0B290] to-[#E4A0A0] px-8 py-4 text-center text-sm font-bold text-[var(--color-foreground)] shadow-[0_24px_40px_-22px_rgba(224,169,150,0.65)] transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_28px_45px_-24px_rgba(224,169,150,0.8)]"
-                  >
-                    Browse Collection
-                  </Link>
-                  <a
-                    href="https://web.facebook.com/p/Crochet-with-dilru-61553942184584/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--color-primary)] bg-white/90 px-8 py-4 text-center text-sm font-bold text-[var(--color-foreground)] shadow-[0_10px_35px_-24px_rgba(224,169,150,0.5)] transition-all duration-300 hover:bg-[var(--color-primary)]/15 hover:shadow-[0_18px_40px_-24px_rgba(224,169,150,0.7)]"
-                  >
-                    Request Custom Order
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                </div>
-              </div>
-              {/* Right image column */}
-              <div className="flex justify-center lg:col-span-5">
-                <div className="relative aspect-square w-full max-w-md overflow-hidden rounded-[2rem] border border-[#efe0d5] bg-[#f8efe8] p-2 shadow-[0_30px_70px_-30px_rgba(44,37,35,0.35)] rotate-1 transition-transform duration-500 ease-out hover:rotate-0 sm:rotate-2">
-                  <img
-                    src="https://scontent.fcmb3-2.fna.fbcdn.net/v/t39.30808-6/738691661_122259637694131406_2569675746571995115_n.jpg?stp=cp6_dst-jpg_tt6&cstp=mx720x960&ctp=s720x960&_nc_cat=104&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeF70V3FRtdzXMlWV9D-jRzgX6QidQ85A-1fpCJ1DzkD7Ufn-tJeqyaKTkKYEWIc_zdrqdGTtFGyHP7ELAT9y0Ga&_nc_ohc=hxLtLdwOwSQQ7kNvwHf0BpO&_nc_oc=AdrwK5vTXDImswMuxTQs5rRTw7W1tDmH9sIKM5G2ciCe8xdC9B5x87Udr_jCCC8TGlB7IhQzbOOATH0-he1kC24B&_nc_zt=23&_nc_ht=scontent.fcmb3-2.fna&_nc_gid=KU8TpWurG-1esLjZ6wZglA&_nc_ss=7d2a8&oh=00_AQDg-VUcrzZvT2ALAbcwpfQMSlX9FXt90_xGXmbPulgI0A&oe=6A5BA457"
-                    alt="Handmade crochet stitch detail cardigan"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute bottom-4 right-4 py-2.5 px-4 bg-white/95 backdrop-blur-sm rounded-2xl shadow-sm text-xs font-bold text-[var(--color-foreground)] border border-[#FBEFEA] flex items-center gap-1.5">
-                    <Heart
-                      className="w-3.5 h-3.5 text-[var(--color-primary)]"
-                      fill="var(--color-primary)"
-                    />
-                    Stitched by Hand
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 3. HOW IT WORKS */}
+    <div className="flex flex-col min-h-screen bg-[#FFF8F2] overflow-x-hidden">
+      <main className="flex-1">
+        {/* ═══════════════════════════════════════════════════════════
+            1. CINEMATIC HERO
+        ═══════════════════════════════════════════════════════════ */}
         <section
-          id="how-it-works"
-          className="bg-primary  py-16 bg-[#FDFBF7]/50 border-b border-[#F5EFEB]"
+          ref={heroRef}
+          className="relative h-screen min-h-[640px] max-h-[900px] flex items-end overflow-hidden"
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--color-foreground)] font-serif">
-                How It Works
-              </h2>
-              <p className="mt-3 text-[#4A3728] text-sm sm:text-base">
-                Getting your custom handcrafted crochet creations is simple and
-                personalized.
-              </p>
+          {/* Parallax background image */}
+          <motion.div
+            style={{ y: heroY }}
+            className="absolute inset-0 scale-110"
+          >
+            <img
+              src={IMG_HERO}
+              alt="Handmade crochet cardigan"
+              className="w-full h-full object-cover object-top"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#1A1108]/90 via-[#2C2523]/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#1A1108]/60 via-transparent to-transparent" />
+          </motion.div>
+
+          {/* Floating badge top-right */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            className="absolute top-8 right-8 hidden sm:flex flex-col items-end gap-2"
+          >
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-4 py-2.5">
+              <div className="w-2 h-2 rounded-full bg-[#A8C3A0] animate-pulse" />
+              <span className="text-white/90 text-xs font-semibold tracking-wide">
+                Accepting Custom Orders
+              </span>
             </div>
+          </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
-              <div className="how-card boutique-card gradient-card subtle-glow flex flex-col items-center rounded-[1.5rem] p-6 text-center hover-lift reveal-card">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--color-primary)]/18 text-[var(--color-primary)] shadow-[0_18px_40px_-28px_rgba(224,169,150,0.55)]">
-                  <Sparkles className="w-7 h-7" />
-                </div>
-                <h3 className="text-lg font-bold text-[var(--color-foreground)] mb-2 font-serif">
-                  1. Pick Your Design
-                </h3>
-                <p className="text-sm text-[#4A3728] leading-relaxed">
-                  Browse our artisanal collection of cozy sweaters, flower
-                  bouquets, and accessories, selecting your preferred style.
-                </p>
-              </div>
+          {/* Hero copy */}
+          <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 pb-16 sm:pb-24 w-full">
+            <motion.p
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.1 }}
+              className="text-[10px] uppercase tracking-[0.4em] text-[#D8A7B1] font-bold mb-5"
+            >
+              Crochet with Dilru — Sri Lanka
+            </motion.p>
 
-              <div className="how-card boutique-card gradient-card subtle-glow flex flex-col items-center rounded-[1.5rem] p-6 text-center hover-lift reveal-card">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#96A288]/18 text-[#96A288] shadow-[0_18px_40px_-28px_rgba(150,162,136,0.45)]">
-                  <Scissors className="w-7 h-7" />
-                </div>
-                <h3 className="text-lg font-bold text-[var(--color-foreground)] mb-2 font-serif">
-                  2. Customize Details
-                </h3>
-                <p className="text-sm text-[#4A3728] leading-relaxed">
-                  Specify your favorite color combinations, yarn materials, and
-                  size requirements to make it uniquely yours.
-                </p>
-              </div>
+            <motion.h1
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.9,
+                delay: 0.2,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="font-serif text-5xl sm:text-7xl lg:text-8xl font-bold text-white leading-[0.9] tracking-tighter max-w-3xl"
+            >
+              Wear something
+              <br />
+              <span className="text-[#D8A7B1]">made</span>{" "}
+              <span className="italic font-light">just</span>
+              <br />
+              for you.
+            </motion.h1>
 
-              <div className="how-card boutique-card gradient-card subtle-glow flex flex-col items-center rounded-[1.5rem] p-6 text-center hover-lift reveal-card">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E4A0A0]/18 text-[#E4A0A0] shadow-[0_18px_40px_-28px_rgba(228,160,160,0.45)]">
-                  <Truck className="w-7 h-7" />
-                </div>
-                <h3 className="text-lg font-bold text-[var(--color-foreground)] mb-2 font-serif">
-                  3. Handcrafted Delivery
-                </h3>
-                <p className="text-sm text-[#4A3728] leading-relaxed">
-                  We stitch your order complete with custom care, packing it
-                  with love, and deliver islandwide to your doorstep.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.4 }}
+              className="mt-7 text-white/70 text-sm sm:text-base max-w-md leading-7"
+            >
+              Handcrafted crochet cardigans, accessories, and floral keepsakes —
+              made to order, one stitch at a time.
+            </motion.p>
 
-        {/* 4. FEATURED PRODUCTS (teaser) */}
-        <section
-          id="shop"
-          className="py-16 sm:py-24 bg-[linear-gradient(180deg,_rgba(253,251,247,0.95)_0%,_rgba(248,241,235,0.9)_100%)]"
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col sm:flex-row justify-between items-center mb-12 gap-4 text-center sm:text-left">
-              <div>
-                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--color-foreground)] font-serif">
-                  Featured Creations
-                </h2>
-                <p className="mt-2 text-[#4A3728] text-sm">
-                  A preview of our handcrafted collection. Visit the shop to
-                  browse and filter all items.
-                </p>
-              </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.55 }}
+              className="mt-10 flex flex-wrap gap-4"
+            >
               <Link
                 href="/shop"
-                className="py-2.5 px-5 rounded-full bg-gradient-to-r from-[var(--color-primary)] via-[#F0B290] to-[#E4A0A0] text-[var(--color-foreground)] font-semibold text-xs transition-transform duration-300 hover:scale-[1.01] shadow-[0_22px_35px_-22px_rgba(224,169,150,0.72)]"
+                className="inline-flex items-center gap-2.5 rounded-2xl bg-[#D8A7B1] hover:bg-[#C596A0] text-[#2B2B2B] font-bold px-8 py-4 text-sm transition-all hover:scale-105 active:scale-95 shadow-xl"
               >
-                View Full Shop →
+                Browse Collection <ArrowRight className="w-4 h-4" />
               </Link>
-            </div>
+              <a
+                href={
+                  CONTACT_CONFIG?.whatsappUrl ||
+                  "https://web.facebook.com/p/Crochet-with-dilru-61553942184584/"
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/30 text-white hover:bg-white/10 backdrop-blur-sm font-bold px-8 py-4 text-sm transition-all"
+              >
+                Custom Order
+              </a>
+            </motion.div>
 
+            {/* Scroll indicator */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1, delay: 1.2 }}
+              className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+            >
+              <div className="w-px h-12 bg-gradient-to-b from-white/0 via-white/50 to-white/0 animate-pulse" />
+              <span className="text-white/40 text-[10px] uppercase tracking-[0.3em]">
+                Scroll
+              </span>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════════════
+            2. MARQUEE TRUST BAR
+        ═══════════════════════════════════════════════════════════ */}
+        <div className="bg-[#2B2B2B] py-4 overflow-hidden">
+          <div className="flex w-max animate-[marquee_30s_linear_infinite] gap-0">
+            {MARQUEE_ITEMS.map((item, i) => (
+              <span
+                key={i}
+                className="whitespace-nowrap text-xs font-semibold text-white/60 tracking-widest px-8 uppercase"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* ═══════════════════════════════════════════════════════════
+            3. EDITORIAL PRODUCT GRID
+        ═══════════════════════════════════════════════════════════ */}
+        <section className="py-24 sm:py-32 bg-[#FFF8F2]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section header */}
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-16"
+            >
+              <div className="space-y-2">
+                <span className="text-[10px] uppercase tracking-[0.35em] font-bold text-[#A8C3A0]">
+                  The Collection
+                </span>
+                <h2 className="text-4xl sm:text-5xl font-bold text-[#2B2B2B] font-serif leading-none">
+                  Featured
+                  <br />
+                  Creations
+                </h2>
+              </div>
+              <div className="flex flex-col gap-2 sm:items-end">
+                <p className="text-sm text-[#5A5A5A] max-w-xs leading-relaxed">
+                  Small-batch, made to order. Every piece handcrafted with
+                  premium yarn.
+                </p>
+                <Link
+                  href="/shop"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#D8A7B1] hover:text-[#C596A0] transition-colors"
+                >
+                  View full shop <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Products Section */}
             {products.length === 0 ? (
-              <div className="text-center py-20 bg-white border border-[#F5EFEB] rounded-3xl">
-                <CartIcon className="w-12 h-12 mx-auto text-[#A0958F] mb-4" />
-                <h3 className="text-lg font-semibold text-[var(--color-foreground)] font-serif">
+              <div className="text-center py-24 bg-white border border-[#F4E8D5]/60 rounded-3xl max-w-lg mx-auto space-y-6 shadow-sm">
+                <div className="p-4 bg-[#F4E8D5] rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+                  <ShoppingBag className="w-8 h-8 text-[#5A5A5A]/60" />
+                </div>
+                <h3 className="text-lg font-bold text-[#2B2B2B] font-serif">
                   The catalog is being refreshed
                 </h3>
-                <p className="text-sm text-[#4A3728] mt-1 mb-4">
-                  Seed the sample collection to preview our latest handmade
-                  pieces and custom order options.
-                </p>
                 <button
                   onClick={async () => {
-                    const res = await fetch("/api/seed");
-                    const data = await res.json();
-                    if (data.success) {
+                    const r = await fetch("/api/seed");
+                    const d = await r.json();
+                    if (d.success) {
                       router.refresh();
                       window.location.reload();
                     }
                   }}
-                  className="py-2.5 px-6 bg-[var(--color-primary)] hover:bg-[#CF9581] text-[var(--color-foreground)] font-semibold rounded-full text-sm"
+                  className="py-3 px-6 bg-[#D8A7B1] hover:bg-[#C596A0] text-[#2B2B2B] font-bold rounded-xl text-xs cursor-pointer transition-all hover:scale-105"
                 >
                   Seed Database Items
                 </button>
               </div>
             ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                  {products.slice(0, 4).map((product) => (
-                    <div
+              <div className="space-y-12">
+                {/* Row 2: Three equal cards / Rest of the products */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {products.slice(1).map((product, idx) => (
+                    <motion.div
                       key={product.id}
-                      className="group boutique-card flex h-full flex-col overflow-hidden rounded-[1.4rem] transition-all duration-300 hover:-translate-y-1"
+                      variants={fadeUp}
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true }}
+                      custom={0.1 * (idx % 3)}
+                      className="group relative rounded-[2rem] overflow-hidden border border-[#F4E8D5]/50 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-500 flex flex-col"
                     >
-                      {/* Image Container with hover zoom */}
-                      <div className="relative aspect-[4/5] overflow-hidden bg-[#F5EFEB]">
+                      <div className="relative overflow-hidden bg-[#F4E8D5] aspect-square">
                         <img
                           src={product.image}
                           alt={product.name}
-                          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
                         {product.customizable && (
-                          <span className="absolute top-3 left-3 bg-[#96A288] text-white text-xxs font-bold tracking-wide uppercase px-2.5 py-1 rounded-full shadow-sm">
+                          <span className="absolute top-4 left-4 bg-[#A8C3A0] text-white text-[10px] font-extrabold uppercase tracking-wide px-3 py-1 rounded-full shadow-sm">
                             Customizable
                           </span>
                         )}
-                      </div>
-
-                      <div className="flex flex-grow flex-col justify-between p-5">
-                        <div className="space-y-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-bold text-[var(--color-foreground)] group-hover:text-[var(--color-primary)] transition-colors leading-tight text-base font-serif">
-                              {product.name}
-                            </h3>
-                            <PriceBadge
-                              price={product.price}
-                              showLKRPrices={showLKRPrices}
-                            />
-                          </div>
-                        </div>
-
+                        {(product.stock ?? 0) === 0 && (
+                          <span className="absolute top-4 right-14 bg-white/90 text-red-500 text-[10px] font-extrabold uppercase px-3 py-1 rounded-full border border-red-100">
+                            Sold Out
+                          </span>
+                        )}
                         <button
-                          onClick={() => {
-                            setSelectedProduct(product);
-                            setCustomYarnColor("Original");
-                            setCustomSize(
-                              product.customizable ? "M" : "Standard",
-                            );
-                            setQuantity(1);
-                          }}
-                          className="mt-4 w-full py-2.5 px-4 bg-[#F5EFEB] hover:bg-[var(--color-primary)] hover:text-[var(--color-foreground)] text-[var(--color-foreground)] font-semibold rounded-xl transition-all duration-200 text-xs text-center cursor-pointer"
+                          onClick={(e) => toggleWishlist(product.id, e)}
+                          className="absolute top-4 right-4 p-2.5 bg-white/90 hover:bg-white rounded-full text-[#5A5A5A] hover:text-red-500 shadow-sm hover:scale-110 active:scale-90 transition-all z-10 cursor-pointer"
+                          aria-label="Add to wishlist"
                         >
-                          View Details
+                          <Heart
+                            className="w-4 h-4"
+                            fill={
+                              wishlist.includes(product.id) ? "#EF4444" : "none"
+                            }
+                            stroke={
+                              wishlist.includes(product.id)
+                                ? "#EF4444"
+                                : "currentColor"
+                            }
+                          />
+                        </button>
+                        <div className="absolute inset-0 bg-[#2B2B2B]/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-400 backdrop-blur-[1px]">
+                          <button
+                            onClick={() => openProduct(product)}
+                            disabled={(product.stock ?? 0) === 0}
+                            className="flex items-center gap-1.5 py-3 px-5 bg-white/95 hover:bg-[#D8A7B1] text-[#2B2B2B] font-bold rounded-2xl shadow-md text-xs hover:scale-105 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            Quick View
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-5 space-y-3 flex-1">
+                        <span className="text-[10px] font-bold text-[#A8C3A0] uppercase tracking-wider">
+                          {product.category}
+                        </span>
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-bold text-[#2B2B2B] font-serif text-base leading-snug group-hover:text-[#D8A7B1] transition-colors">
+                            {product.name}
+                          </h3>
+                          <PriceBadge
+                            price={product.price}
+                            showLKRPrices={showLKRPrices}
+                          />
+                        </div>
+                        <button
+                          onClick={() => openProduct(product)}
+                          disabled={(product.stock ?? 0) === 0}
+                          className="w-full py-3 bg-[#F4E8D5] hover:bg-[#D8A7B1] text-[#2B2B2B] font-bold rounded-xl text-xs transition-all cursor-pointer disabled:opacity-50"
+                        >
+                          {(product.stock ?? 0) === 0
+                            ? "Out of Stock"
+                            : "View Details"}
                         </button>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
 
-                {products.length > 4 && (
-                  <div className="text-center mt-10">
+                {/* View All Button when collection exceeds the layout */}
+                {products.length > 5 && (
+                  <motion.div
+                    variants={fadeUp}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    className="text-center mt-12"
+                  >
                     <Link
                       href="/shop"
-                      className="inline-flex py-3 px-8 bg-[#F5EFEB] hover:bg-[var(--color-primary)] text-[var(--color-foreground)] font-semibold rounded-full text-sm transition-colors"
+                      className="inline-flex items-center gap-2 py-4 px-10 border-2 border-[#D8A7B1]/50 hover:bg-[#D8A7B1] hover:text-[#2B2B2B] text-[#2B2B2B] font-bold rounded-full text-sm transition-all hover:scale-105 hover:border-[#D8A7B1]"
                     >
-                      See all {products.length} products
+                      See all {products.length} handmade pieces{" "}
+                      <ArrowRight className="w-4 h-4" />
                     </Link>
-                  </div>
+                  </motion.div>
                 )}
-              </>
+              </div>
             )}
           </div>
         </section>
 
-        {/* 5. ABOUT SECTION */}
-        <section
-          id="about"
-          className="bg-primary border-t border-b border-[#F5EFEB]  py-16 sm:py-24"
-        >
+        {/* ═══════════════════════════════════════════════════════════
+            4. BRAND STORY — IMAGE + TEXT SPLIT
+        ═══════════════════════════════════════════════════════════ */}
+        <section className="bg-[#2B2B2B] py-24 sm:py-32 overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <div className="aspect-4/3 overflow-hidden rounded-[2rem] border border-[#efe0d5] bg-[#f8efe8] p-2 shadow-[0_20px_50px_-24px_rgba(44,37,35,0.28)]">
-                <img
-                  src="https://scontent.fcmb12-1.fna.fbcdn.net/v/t39.30808-6/735317520_122259637172131406_2006573388631911599_n.jpg?stp=cp6_dst-jpg_tt6&cstp=mx720x960&ctp=s720x960&_nc_cat=108&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeFiFKvHil9p0FtylHlRJTq5hyHvSL6e83eHIe9Ivp7zdxNQWLvGDOnTKa1DNbiIyuA5styL_8N5TqXdQhNLuWsK&_nc_ohc=QcFw5nrIhWAQ7kNvwGL1JEC&_nc_oc=Adopb5rQrcKa5lkhjdayVKK_5xkX05vqZClsQyknAiLwQPWDO7VuvgNiviiQNdEv6zedn3calpPPVvBmqI04LG9W&_nc_zt=23&_nc_ht=scontent.fcmb12-1.fna&_nc_gid=ZoOhjj9ooIzlz0HSW1mYiA&_nc_ss=7d2a8&oh=00_AQCNdsPKlnAodSAKUHELEYhahVMLqOSiRUeXybTTeII6vw&oe=6A5BA858"
-                  alt="Crochet yarn workspace floral"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="space-y-6">
-                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-primary)]">
-                  <Heart className="w-3.5 h-3.5" fill="var(--color-primary)" />{" "}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+              {/* Image mosaic */}
+              <motion.div
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                className="relative"
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="group rounded-[1.8rem] overflow-hidden aspect-[3/4] row-span-2 border border-white/10 shadow-2xl">
+                    <img
+                      src={IMG_BEANIE}
+                      alt="Crochet beanie"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="group rounded-[1.8rem] overflow-hidden aspect-square border border-white/10 shadow-2xl">
+                    <img
+                      src={IMG_FLOWERS}
+                      alt="Crochet flowers"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="group rounded-[1.8rem] overflow-hidden aspect-square border border-white/10 shadow-2xl">
+                    <img
+                      src={IMG_TOTE}
+                      alt="Crochet tote"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  </div>
+                </div>
+                {/* Floating tag */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
+                  className="absolute -bottom-4 -right-4 bg-[#D8A7B1] rounded-2xl px-5 py-3 shadow-xl"
+                >
+                  <p className="text-[#2B2B2B] text-xs font-extrabold uppercase tracking-wide">
+                    Stitched by Hand
+                  </p>
+                  <p className="text-[#2B2B2B]/70 text-[10px] font-medium mt-0.5">
+                    Est. 2023 · Sri Lanka
+                  </p>
+                </motion.div>
+              </motion.div>
+
+              {/* Text */}
+              <motion.div
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                custom={0.2}
+                className="space-y-7"
+              >
+                <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-[#D8A7B1]">
                   Our Story
-                </div>
-                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--color-foreground)] font-serif">
-                  Every Stitch Tells a Story
+                </span>
+                <h2 className="text-4xl sm:text-5xl font-bold text-white font-serif leading-snug">
+                  Slow-made.
+                  <br />
+                  <span className="text-[#D8A7B1]">Soul-filled.</span>
                 </h2>
-                <p className="text-[#4A3728] text-sm sm:text-base leading-relaxed">
-                  Welcome to <strong>Crochet with Dilru</strong>. What began as
-                  a personal hobby of hand-knitting gifts for family blossomed
-                  into a boutique small business. We specialize in slow-fashion
-                  apparel, sustainable accessories, and everlasting crochet
-                  flower bouquets.
+                <p className="text-white/60 text-sm leading-8 max-w-md">
+                  Crochet with Dilru was born from a quiet love of slow craft —
+                  the meditative rhythm of a hook, the warmth of premium yarn,
+                  and the joy of making something genuinely beautiful by hand.
+                  Every piece starts with intention and ends as an heirloom.
                 </p>
-                <p className="text-[#4A3728] text-sm sm:text-base leading-relaxed">
-                  Every item is made to order by hand in Sri Lanka, using
-                  premium selected cotton and acrylic blends. We believe in slow
-                  crafts, details, and creating items that can be cherished
-                  forever.
-                </p>
-                <div className="pt-4 border-t border-[#EBE5E0] grid grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="text-2xl font-bold text-[var(--color-foreground)] font-serif">
-                      100%
-                    </h4>
-                    <p className="text-xs text-[#4A3728]">Handcrafted Items</p>
-                  </div>
-                  <div>
-                    <h4 className="text-2xl font-bold text-[var(--color-foreground)] font-serif">
-                      No Waste
-                    </h4>
-                    <p className="text-xs text-[#4A3728]">
-                      Made-to-order production
-                    </p>
-                  </div>
+
+                {/* Stats row */}
+                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/10">
+                  {[
+                    { n: "500+", l: "Happy Customers" },
+                    { n: "100%", l: "Handcrafted" },
+                    { n: "3+", l: "Years of Craft" },
+                  ].map((stat) => (
+                    <div key={stat.l} className="text-center">
+                      <p className="text-3xl font-bold text-white font-serif">
+                        {stat.n}
+                      </p>
+                      <p className="text-[10px] text-white/40 uppercase tracking-wide font-semibold mt-1">
+                        {stat.l}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              </div>
+
+                <div className="flex flex-wrap gap-4 pt-2">
+                  <Link
+                    href="/our-story"
+                    className="inline-flex items-center gap-2 rounded-2xl bg-[#D8A7B1] hover:bg-[#C596A0] text-[#2B2B2B] font-bold px-7 py-3.5 text-sm transition-all hover:scale-105 active:scale-95 shadow-md"
+                  >
+                    Read Our Story <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <Link
+                    href="/how-it-works"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/20 text-white hover:bg-white/10 font-bold px-7 py-3.5 text-sm transition-all"
+                  >
+                    How It Works
+                  </Link>
+                </div>
+              </motion.div>
             </div>
           </div>
         </section>
 
-        {/* 6. INSTAGRAM / COMMUNITY SOCIAL PROOF */}
-        <section id="community" className="py-16 bg-[#FDFBF7]">
+        {/* ═══════════════════════════════════════════════════════════
+            5. PROCESS — HORIZONTAL NUMBERED FLOW
+        ═══════════════════════════════════════════════════════════ */}
+        <section className="py-24 sm:py-32 bg-[#FFF8F2] border-y border-[#F4E8D5]/60">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto mb-12">
-              <h2 className="text-3xl font-bold tracking-tight text-[var(--color-foreground)] font-serif">
-                Made for Our Community
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="text-center mb-20"
+            >
+              <span className="text-[10px] uppercase tracking-[0.35em] font-bold text-[#D8A7B1] mb-3 block">
+                Simple Process
+              </span>
+              <h2 className="text-4xl sm:text-5xl font-bold text-[#2B2B2B] font-serif leading-none">
+                How It Works
               </h2>
-              <p className="mt-2 text-[#4A3728] text-sm">
-                Tag{" "}
-                <span className="font-semibold text-[var(--color-primary)]">
-                  @crochet_with_dilru
-                </span>{" "}
-                on social media to get featured!
-              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0 relative">
+              {/* Connector line */}
+              <div className="hidden lg:block absolute top-[2.5rem] left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-transparent via-[#D8A7B1]/40 to-transparent" />
+
+              {PROCESS.map((step, i) => (
+                <motion.div
+                  key={step.n}
+                  variants={fadeUp}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  custom={i}
+                  className="flex flex-col items-center text-center px-6 py-10 group"
+                >
+                  {/* Number circle */}
+                  <div className="relative mb-6">
+                    <div
+                      className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-black font-serif border-2 bg-white shadow-sm group-hover:shadow-md transition-shadow duration-400"
+                      style={{ borderColor: step.color, color: step.color }}
+                    >
+                      {step.n}
+                    </div>
+                    {i < PROCESS.length - 1 && (
+                      <div className="hidden sm:block lg:hidden absolute top-1/2 left-full w-full h-px -translate-y-1/2 bg-[#F4E8D5]" />
+                    )}
+                  </div>
+                  <h3 className="font-bold text-[#2B2B2B] font-serif text-lg mb-3">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm text-[#5A5A5A] leading-6 max-w-xs">
+                    {step.body}
+                  </p>
+                </motion.div>
+              ))}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="relative aspect-square rounded-2xl overflow-hidden border border-[#F5EFEB] group bg-[#FBEFEA] cursor-pointer">
-                <img
-                  src="https://scontent.fcmb11-3.fna.fbcdn.net/v/t39.30808-6/742102269_122260366910131406_7102549205013734556_n.jpg?stp=dst-jpg_tt6&cstp=mx720x960&ctp=s720x960&_nc_cat=101&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeFOaJC9gSA-sPbptUBoNGc_2p6UHbBSHHbanpQdsFIcdvDSVI5vpU3Zx0JaPCDMM72x_s1DKwGn8fYGH71xqbra&_nc_ohc=73dH-GVxvt0Q7kNvwHlcsJK&_nc_oc=AdpJ4vNIa6JWu3zN9TUh6qvfkx2SZCzDxX43eGAALAAOwhIGLGeIkFsnP8B22nN66szifOi46Q9tfQMDZxi7s4ug&_nc_zt=23&_nc_ht=scontent.fcmb11-3.fna&_nc_gid=N9CskCCb68gUM9fq3IcB0A&_nc_ss=7d2a8&oh=00_AQAuXDgrFCt8aldUdLxJxZoCqNv-VEHYB8quLCfc_pDqSg&oe=6A5BB3B4"
-                  alt="Customer feature tote bag"
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-[#2C2523]/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-semibold">
-                  <FacebookIcon className="w-5 h-5 mr-1" /> View Post
-                </div>
-              </div>
-              <div className="relative aspect-square rounded-2xl overflow-hidden border border-[#F5EFEB] group bg-[#FBEFEA] cursor-pointer">
-                <img
-                  src="https://scontent.fcmb11-3.fna.fbcdn.net/v/t39.30808-6/739243585_122259929936131406_8064892688350052236_n.jpg?stp=dst-jpg_tt6&cstp=mx1536x2048&ctp=s1536x2048&_nc_cat=111&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeEyDAyVmfa0dqAr0vxp_4QHmLF25ncUc7GYsXbmdxRzsTfiVjV6uKfY_72-i_RgvVDGxody767gDTsHXfoo_Vcl&_nc_ohc=3JHPOcWKo8cQ7kNvwGQEFUf&_nc_oc=AdpcuZLlaGmKXoLWHi41JfFv5A2fm5DhrK-c8exb_gwmBJpDyL9a3d5QBm5xmOXsUoTlBDctXp14_8uK2SNAXuhI&_nc_zt=23&_nc_ht=scontent.fcmb11-3.fna&_nc_gid=CuEfK6LrJq2w99tRs7pV6w&_nc_ss=7d2a8&oh=00_AQC4fC85pF7gyYowJwJXfPr44BVsIMB9TyiwZPaKZ_Ej3w&oe=6A5BA722"
-                  alt="Customer feature flowers"
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-[#2C2523]/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-semibold">
-                  <FacebookIcon className="w-5 h-5 mr-1" /> View Post
-                </div>
-              </div>
-              <div className="relative aspect-square rounded-2xl overflow-hidden border border-[#F5EFEB] group bg-[#FBEFEA] cursor-pointer">
-                <img
-                  src="https://scontent.fcmb11-3.fna.fbcdn.net/v/t39.30808-6/703110888_122254991342131406_3405810202780959783_n.jpg?stp=dst-jpg_tt6&cstp=mx1170x1557&ctp=s1170x1557&_nc_cat=107&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeEV84e2uXU9Vig2apDVFWmrChAXUq8pLmIKEBdSrykuYsQvtjKZVNRjlBMVFZjnCcidgFcw58N4pIGdiV2a-tN8&_nc_ohc=6nV81asfWk0Q7kNvwH9pSiZ&_nc_oc=AdpuC5jFvxxeqmwoHddTy6J2nkR3bMJEE6JyiGa5SmUS--2wbKNgR9VInQTdVsN89pHRrnMHMGMPB_EhSc0uHQwB&_nc_zt=23&_nc_ht=scontent.fcmb11-3.fna&_nc_gid=tYFHvT0rV61kowSePfDhDg&_nc_ss=7d2a8&oh=00_AQBrWOAWSUFgehLEvFZHs6TdxRL9w0RMLUBfnE7TB2MoQw&oe=6A5BA617"
-                  alt="Customer feature beanie"
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-[#2C2523]/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-semibold">
-                  <FacebookIcon className="w-5 h-5 mr-1" /> View Post
-                </div>
-              </div>
-              <div className="relative aspect-square rounded-2xl overflow-hidden border border-[#F5EFEB] group bg-[#FBEFEA] cursor-pointer">
-                <img
-                  src="https://scontent.fcmb12-1.fna.fbcdn.net/v/t39.30808-6/735317520_122259637172131406_2006573388631911599_n.jpg?stp=cp6_dst-jpg_tt6&cstp=mx720x960&ctp=s720x960&_nc_cat=108&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeFiFKvHil9p0FtylHlRJTq5hyHvSL6e83eHIe9Ivp7zdxNQWLvGDOnTKa1DNbiIyuA5styL_8N5TqXdQhNLuWsK&_nc_ohc=QcFw5nrIhWAQ7kNvwGL1JEC&_nc_oc=Adopb5rQrcKa5lkhjdayVKK_5xkX05vqZClsQyknAiLwQPWDO7VuvgNiviiQNdEv6zedn3calpPPVvBmqI04LG9W&_nc_zt=23&_nc_ht=scontent.fcmb12-1.fna&_nc_gid=RTf33MuVkq73s9Hb-MQ1kg&_nc_ss=7d2a8&oh=00_AQDT-YAnLu2mtFjcQf5AwVUESovsgxNbbC1wpC5_b049Dw&oe=6A5BA858"
-                  alt="Customer feature cardigan"
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-[#2C2523]/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-semibold">
-                  <FacebookIcon className="w-5 h-5 mr-1" /> View Post
-                </div>
-              </div>
-            </div>
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="text-center mt-10"
+            >
+              <Link
+                href="/how-it-works"
+                className="inline-flex items-center gap-2 text-sm font-bold text-[#D8A7B1] hover:text-[#C596A0] transition-colors"
+              >
+                Learn more about our process <ArrowRight className="w-4 h-4" />
+              </Link>
+            </motion.div>
           </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════════════
+            6. COMMUNITY PHOTO MOSAIC
+        ═══════════════════════════════════════════════════════════ */}
+        <section className="py-24 sm:py-32 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-14"
+            >
+              <div>
+                <span className="text-[10px] uppercase tracking-[0.35em] font-bold text-[#A8C3A0] mb-3 block">
+                  Community
+                </span>
+                <h2 className="text-4xl sm:text-5xl font-bold text-[#2B2B2B] font-serif leading-none">
+                  Worn with
+                  <br />
+                  Love
+                </h2>
+              </div>
+              <p className="text-sm text-[#5A5A5A] max-w-xs leading-relaxed">
+                Tag{" "}
+                <span className="font-bold text-[#D8A7B1]">
+                  @crochet_with_dilru
+                </span>{" "}
+                on Facebook to get featured in our community gallery.
+              </p>
+            </motion.div>
+
+            {/* Mosaic grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                {
+                  src: IMG_TOTE,
+                  span: "sm:col-span-2 sm:row-span-2",
+                  aspect: "aspect-square",
+                },
+                { src: IMG_FLOWERS, span: "", aspect: "aspect-square" },
+                { src: IMG_BEANIE, span: "", aspect: "aspect-square" },
+                { src: IMG_CARDIGAN, span: "", aspect: "aspect-square" },
+                { src: IMG_COMMUNITY, span: "", aspect: "aspect-square" },
+              ].map((item, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeUp}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  custom={i * 0.08}
+                  className={`group relative ${item.span} ${item.aspect} rounded-[1.5rem] overflow-hidden border border-[#F4E8D5] shadow-sm`}
+                >
+                  <img
+                    src={item.src}
+                    alt={`Community post ${i + 1}`}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-[#2B2B2B]/0 group-hover:bg-[#2B2B2B]/30 transition-all duration-400" />
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="text-center mt-12"
+            >
+              <Link
+                href="/community"
+                className="inline-flex items-center gap-2 py-3.5 px-8 rounded-full border border-[#D8A7B1]/40 hover:bg-[#D8A7B1]/10 text-[#2B2B2B] font-bold text-sm transition-all hover:scale-105"
+              >
+                Visit Community <ArrowRight className="w-4 h-4" />
+              </Link>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════════════
+            7. DARK FULL-WIDTH CTA BANNER
+        ═══════════════════════════════════════════════════════════ */}
+        <section className="relative overflow-hidden">
+          <div className="absolute inset-0">
+            <img
+              src={IMG_COMMUNITY}
+              alt="CTA background"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-[#1A1108]/80 backdrop-blur-sm" />
+          </div>
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="relative z-10 max-w-3xl mx-auto text-center px-6 py-28 sm:py-36"
+          >
+            <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-[#D8A7B1] mb-4 block">
+              Ready for something special?
+            </span>
+            <h2 className="text-4xl sm:text-6xl font-bold text-white font-serif leading-tight mb-6">
+              Your perfect piece
+              <br />
+              is waiting to be made.
+            </h2>
+            <p className="text-white/60 text-sm leading-7 mb-10 max-w-lg mx-auto">
+              Every order is a collaboration. Tell us your vision — size, color,
+              occasion — and we'll handcraft something beautiful just for you.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/shop"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#D8A7B1] hover:bg-[#C596A0] text-[#2B2B2B] font-bold px-10 py-4 text-sm transition-all hover:scale-105 active:scale-95 shadow-xl"
+              >
+                Shop the Collection <ArrowRight className="w-4 h-4" />
+              </Link>
+              <a
+                href="https://web.facebook.com/p/Crochet-with-dilru-61553942184584/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded-2xl border border-white/30 text-white hover:bg-white/10 font-bold px-10 py-4 text-sm transition-all"
+              >
+                Message on Facebook
+              </a>
+            </div>
+          </motion.div>
         </section>
       </main>
 
-      <Footer />
-
-      {/* 8. DETAIL MODAL */}
-      {selectedProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2C2523]/50 backdrop-blur-sm">
-          <div className="bg-white border border-[#FBEFEA] w-full max-w-2xl rounded-3xl overflow-hidden shadow-xl max-h-[90vh] flex flex-col sm:flex-row relative">
-            <button
+      {/* ═══════════════════════════════════════════════════════════
+          PRODUCT DETAIL MODAL
+      ═══════════════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {selectedProduct && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               onClick={() => setSelectedProduct(null)}
-              className="absolute top-4 right-4 p-2 bg-white/90 rounded-full hover:bg-red-50 text-[var(--color-foreground)] hover:text-red-500 transition-colors z-10 cursor-pointer shadow-sm"
-              aria-label="Close details"
+              className="fixed inset-0 bg-[#2B2B2B]/60 backdrop-blur-sm cursor-pointer"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className="bg-[#FFF8F2] border border-[#F4E8D5] w-full max-w-2xl rounded-[2rem] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col md:flex-row relative z-10"
             >
-              <X className="w-5 h-5" />
-            </button>
+              <button
+                onClick={() => setSelectedProduct(null)}
+                className="absolute top-4 right-4 p-2.5 bg-white/90 rounded-full hover:bg-red-50 text-[#2B2B2B] hover:text-red-500 transition-colors z-20 cursor-pointer shadow-sm border border-[#F4E8D5]/50"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
 
-            {/* Product Image */}
-            <div className="w-full sm:w-1/2 aspect-square sm:aspect-auto bg-[#F5EFEB] relative h-64 sm:h-auto">
-              <img
-                src={selectedProduct.image}
-                alt={selectedProduct.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* Product Info / Customizer */}
-            <div className="w-full sm:w-1/2 p-6 overflow-y-auto flex flex-col h-auto max-h-[45vh] sm:max-h-none">
-              <span className="text-[#96A288] text-xxs font-bold uppercase tracking-wider mb-1 block">
-                {selectedProduct.category}
-              </span>
-              <h3 className="text-2xl font-bold text-[var(--color-foreground)] mb-2 font-serif leading-tight">
-                {selectedProduct.name}
-              </h3>
-              <div className="flex items-center gap-3 mb-4">
-                <PriceDisplay
-                  price={selectedProduct.price}
-                  size="lg"
-                  showLKRPrices={showLKRPrices}
+              <div className="w-full md:w-1/2 aspect-square md:aspect-auto bg-[#F4E8D5] h-64 md:h-auto border-r border-[#F4E8D5]/40">
+                <img
+                  src={selectedProduct.image}
+                  alt={selectedProduct.name}
+                  className="w-full h-full object-cover"
                 />
-                {selectedProduct.customizable && (
-                  <span className="text-xxs text-[#96A288] border border-[#96A288] px-2 py-0.5 rounded-full font-bold">
-                    Customizable
+              </div>
+
+              <div className="w-full md:w-1/2 p-7 overflow-y-auto flex flex-col justify-between max-h-[50vh] md:max-h-none">
+                <div className="space-y-4">
+                  <span className="text-[#A8C3A0] text-[10px] font-extrabold uppercase tracking-wider block">
+                    {selectedProduct.category}
                   </span>
+                  <h3 className="text-2xl font-bold text-[#2B2B2B] font-serif leading-tight">
+                    {selectedProduct.name}
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <PriceDisplay
+                      price={selectedProduct.price}
+                      size="lg"
+                      showLKRPrices={showLKRPrices}
+                    />
+                    {selectedProduct.customizable && (
+                      <span className="text-[10px] text-[#A8C3A0] border border-[#A8C3A0]/40 px-2.5 py-0.5 rounded-full font-bold uppercase">
+                        Customizable
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs leading-relaxed text-[#5A5A5A]">
+                    {selectedProduct.description}
+                  </p>
+
+                  {selectedProduct.customizable ? (
+                    <div className="space-y-4 border-t border-[#F4E8D5] pt-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#2B2B2B] uppercase tracking-wide mb-2.5">
+                          Yarn Color
+                        </label>
+                        <div className="flex flex-wrap gap-2.5">
+                          {YARN_COLORS.map((c) => (
+                            <button
+                              key={c.name}
+                              type="button"
+                              title={c.name}
+                              onClick={() => setCustomYarnColor(c.name)}
+                              className="cursor-pointer"
+                            >
+                              <span
+                                className={`block w-8 h-8 rounded-full border-2 shadow-sm transition-all duration-300 ${customYarnColor === c.name ? "border-[#D8A7B1] ring-2 ring-[#D8A7B1]/30 scale-110" : "border-white ring-1 ring-[#F4E8D5] hover:scale-105"}`}
+                                style={{ backgroundColor: c.hex }}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#2B2B2B] uppercase tracking-wide mb-2.5">
+                          Size
+                        </label>
+                        <div className="flex gap-2">
+                          {SIZES.map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => setCustomSize(s)}
+                              className={`w-10 h-10 text-xs font-bold border rounded-xl transition-all cursor-pointer ${customSize === s ? "border-[#D8A7B1] bg-[#D8A7B1] text-[#2B2B2B] scale-102" : "border-[#F4E8D5] text-[#5A5A5A] hover:border-[#D8A7B1]/50"}`}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-[#5A5A5A]/70 font-semibold italic border-t border-[#F4E8D5] pt-4 flex items-center gap-1.5">
+                      <Info className="w-3.5 h-3.5 text-[#D8A7B1]" />
+                      Standard size. Contact us for custom sizing requests.
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-[#F4E8D5] pt-5 mt-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#2B2B2B]">
+                      Quantity
+                    </span>
+                    <div className="flex items-center gap-3 border border-[#F4E8D5] rounded-xl px-3 py-1.5 bg-white/50">
+                      <button
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="p-0.5 text-[#5A5A5A] hover:text-[#D8A7B1] cursor-pointer transition-colors"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="text-xs font-extrabold w-4 text-center text-[#2B2B2B]">
+                        {quantity}
+                      </span>
+                      <button
+                        onClick={() => setQuantity(quantity + 1)}
+                        className="p-0.5 text-[#5A5A5A] hover:text-[#D8A7B1] cursor-pointer transition-colors"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={addToCartFromModal}
+                    className="w-full py-4 px-6 bg-[#D8A7B1] hover:bg-[#C596A0] text-[#2B2B2B] font-bold rounded-2xl shadow-sm hover:shadow hover:scale-[1.01] active:scale-[0.99] transition-all text-xs cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <ShoppingBag className="w-4 h-4" /> Add to Cart
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════════════════════════════════════════════════════
+          CART DRAWER
+      ═══════════════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {isCartOpen && (
+          <div className="fixed inset-0 z-50 flex justify-end">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCartOpen(false)}
+              className="fixed inset-0 bg-[#2B2B2B]/50 backdrop-blur-sm cursor-pointer"
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 220 }}
+              className="relative w-full max-w-md bg-[#FFF8F2] h-full shadow-2xl flex flex-col border-l border-[#F4E8D5]"
+            >
+              {/* Header */}
+              <div className="p-6 border-b border-[#F4E8D5] flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <ShoppingBag className="w-5 h-5 text-[#2B2B2B]" />
+                  <h3 className="text-lg font-bold text-[#2B2B2B] font-serif">
+                    Shopping Bag
+                  </h3>
+                  <span className="py-0.5 px-2 bg-[#F4E8D5] rounded-full text-[10px] font-extrabold text-[#5A5A5A]">
+                    {cartCount}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setIsCartOpen(false)}
+                  className="p-2 hover:bg-[#F4E8D5] rounded-full text-[#5A5A5A] hover:text-[#2B2B2B] transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Items */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                {cart.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+                    <div className="p-4 bg-[#F4E8D5] rounded-full">
+                      <ShoppingBag className="w-10 h-10 text-[#5A5A5A]/50" />
+                    </div>
+                    <p className="text-sm font-bold text-[#2B2B2B] font-serif">
+                      Your bag is empty
+                    </p>
+                    <p className="text-xs text-[#5A5A5A]">
+                      Explore our collection and find your perfect handmade
+                      piece.
+                    </p>
+                    <button
+                      onClick={() => setIsCartOpen(false)}
+                      className="py-2.5 px-6 bg-[#D8A7B1] hover:bg-[#C596A0] text-[#2B2B2B] font-bold rounded-xl text-xs cursor-pointer transition-all hover:scale-105"
+                    >
+                      Shop Now
+                    </button>
+                  </div>
+                ) : (
+                  <AnimatePresence>
+                    {cart.map((item) => (
+                      <motion.div
+                        key={item.cartItemId}
+                        layout
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="flex gap-4 border-b border-[#F4E8D5]/60 pb-5 last:border-0 last:pb-0"
+                      >
+                        <div className="w-20 h-20 bg-[#F4E8D5] rounded-2xl overflow-hidden flex-shrink-0 border border-[#F4E8D5]/50">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-grow flex flex-col justify-between py-0.5">
+                          <div>
+                            <div className="flex justify-between items-start gap-2">
+                              <h4 className="text-sm font-bold text-[#2B2B2B] font-serif leading-snug">
+                                {item.name}
+                              </h4>
+                              <span className="text-sm font-bold text-[#2B2B2B] whitespace-nowrap">
+                                ${(item.price * item.quantity).toFixed(2)}
+                              </span>
+                            </div>
+                            {item.customizable && (
+                              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                <span className="text-[10px] bg-[#D8A7B1]/10 text-[#2B2B2B] px-2 py-0.5 rounded-full font-semibold border border-[#D8A7B1]/20">
+                                  Color: {item.yarnColor}
+                                </span>
+                                <span className="text-[10px] bg-[#A8C3A0]/10 text-[#2B2B2B] px-2 py-0.5 rounded-full font-semibold border border-[#A8C3A0]/20">
+                                  Size: {item.size}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between mt-2.5">
+                            <div className="flex items-center gap-2 border border-[#F4E8D5] rounded-xl px-2 py-1 bg-white/50">
+                              <button
+                                onClick={() => updateQty(item.cartItemId, -1)}
+                                className="p-0.5 text-[#5A5A5A] hover:text-[#D8A7B1]"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <span className="text-xs font-bold w-4 text-center text-[#2B2B2B]">
+                                {item.quantity}
+                              </span>
+                              <button
+                                onClick={() => updateQty(item.cartItemId, 1)}
+                                className="p-0.5 text-[#5A5A5A] hover:text-[#D8A7B1]"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                            <button
+                              onClick={() => removeItem(item.cartItemId)}
+                              className="text-[#5A5A5A]/60 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 )}
               </div>
 
-              <p className="text-xs text-[#4A3728] leading-relaxed mb-6">
-                {selectedProduct.description}
-              </p>
-
-              {/* Custom options */}
-              {selectedProduct.customizable ? (
-                <div className="space-y-5 mb-6 border-t border-[#F5EFEB] pt-4">
-                  <div>
-                    <label className="block text-xxs font-bold text-[var(--color-foreground)] uppercase tracking-wide mb-2">
-                      Color
-                    </label>
-                    <div className="flex flex-wrap items-center gap-3">
-                      {YARN_COLORS.map((color) => (
-                        <button
-                          key={color.name}
-                          type="button"
-                          title={color.name}
-                          aria-label={color.name}
-                          onClick={() => setCustomYarnColor(color.name)}
-                          className="cursor-pointer"
-                        >
-                          <span
-                            className={`block w-9 h-9 rounded-full border-2 shadow-sm transition-all ${
-                              customYarnColor === color.name
-                                ? "border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/30 scale-110"
-                                : "border-white ring-1 ring-[#EBE5E0] hover:ring-[#A0958F] hover:scale-105"
-                            }`}
-                            style={{ backgroundColor: color.hex }}
-                          />
-                        </button>
-                      ))}
-                    </div>
+              {/* Footer */}
+              {cart.length > 0 && (
+                <div className="p-6 border-t border-[#F4E8D5] bg-white/60 space-y-4">
+                  <div className="flex justify-between items-center text-sm font-semibold text-[#5A5A5A]">
+                    <span>Subtotal</span>
+                    <span className="text-xl font-bold text-[#2B2B2B]">
+                      ${cartTotal.toFixed(2)}
+                    </span>
                   </div>
-
-                  <div>
-                    <label className="block text-xxs font-bold text-[var(--color-foreground)] uppercase tracking-wide mb-2">
-                      Size
-                    </label>
-                    <div className="flex gap-2">
-                      {SIZES.map((size) => (
-                        <button
-                          key={size}
-                          type="button"
-                          onClick={() => setCustomSize(size)}
-                          className={`w-10 h-10 text-xs font-bold border rounded-xl transition-colors cursor-pointer ${
-                            customSize === size
-                              ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-foreground)]"
-                              : "border-[#EBE5E0] bg-[#FDFBF7] text-[#4A3728] hover:border-[#A0958F]"
-                          }`}
-                        >
-                          {size}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-xxs text-[#A0958F] font-semibold italic mb-6 border-t border-[#F5EFEB] pt-4 flex items-center gap-1">
-                  <Info className="w-3.5 h-3.5" />
-                  Standard size. For custom requests, please contact us.
+                  <p className="text-[10px] text-[#5A5A5A]/70 leading-normal">
+                    Custom orders are hand-stitched. Processing takes 3–5 days.
+                    Delivery charges at checkout.
+                  </p>
+                  <button
+                    onClick={handleCheckout}
+                    disabled={isCheckingOut}
+                    className="w-full py-4 px-6 bg-[#D8A7B1] hover:bg-[#C596A0] text-[#2B2B2B] font-bold rounded-2xl text-xs cursor-pointer flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-75"
+                  >
+                    {isCheckingOut ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        {user ? "Place Order" : "Log In to Order"}{" "}
+                        <CheckCircle className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
-
-              {/* Quantity & Add button */}
-              <div className="mt-auto border-t border-[#F5EFEB] pt-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[var(--color-foreground)]">
-                    Quantity
-                  </span>
-                  <div className="flex items-center gap-3 border border-[#EBE5E0] rounded-xl px-2 py-1 bg-[#FDFBF7]">
-                    <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="p-1 text-[#4A3728] hover:text-[var(--color-primary)]"
-                    >
-                      <Minus className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="text-sm font-bold w-4 text-center text-[var(--color-foreground)]">
-                      {quantity}
-                    </span>
-                    <button
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="p-1 text-[#4A3728] hover:text-[var(--color-primary)]"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => {
-                    window.dispatchEvent(
-                      new CustomEvent("add-to-cart", {
-                        detail: {
-                          product: selectedProduct,
-                          qty: quantity,
-                          color: customYarnColor,
-                          size: customSize,
-                        },
-                      }),
-                    );
-                    setSelectedProduct(null); // Close modal
-                  }}
-                  className="w-full py-3.5 px-6 bg-[var(--color-primary)] hover:bg-[#CF9581] text-[var(--color-foreground)] font-bold rounded-2xl shadow-sm hover:shadow-md transition-all text-xs cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                  Add to Custom Cart
-                </button>
-              </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════════════════════════════════════════════════════
+          CHECKOUT SUCCESS
+      ═══════════════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {checkoutSuccess && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-[#2B2B2B]/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative bg-[#FFF8F2] border border-[#F4E8D5] w-full max-w-md rounded-3xl p-8 text-center shadow-2xl z-10 space-y-5"
+            >
+              <div className="w-16 h-16 bg-[#A8C3A0]/20 flex items-center justify-center rounded-full mx-auto">
+                <CheckCircle className="w-9 h-9 text-[#A8C3A0]" />
+              </div>
+              <h3 className="text-2xl font-bold text-[#2B2B2B] font-serif">
+                Order Received!
+              </h3>
+              <p className="text-sm text-[#5A5A5A]">
+                Thank you! Your handcrafted order is queued. Stitched with love.
+              </p>
+              <div className="p-3 bg-[#F4E8D5]/50 rounded-2xl font-mono text-xs text-[#2B2B2B] border border-[#F4E8D5]">
+                Order ID: {latestOrderId}
+              </div>
+              <button
+                onClick={() => {
+                  setCheckoutSuccess(false);
+                  setIsCartOpen(false);
+                }}
+                className="w-full py-3.5 bg-[#F4E8D5] hover:bg-[#D8A7B1]/20 text-[#2B2B2B] font-bold rounded-2xl text-xs cursor-pointer transition-colors"
+              >
+                Continue Shopping
+              </button>
+              <Link
+                href="/my-orders"
+                onClick={() => {
+                  setCheckoutSuccess(false);
+                  setIsCartOpen(false);
+                }}
+                className="block w-full py-3.5 bg-[#D8A7B1] hover:bg-[#C596A0] text-[#2B2B2B] font-bold rounded-2xl text-xs text-center transition-colors shadow-sm"
+              >
+                View My Orders
+              </Link>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
+import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 
@@ -8,7 +8,7 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
-const plusJakarta = Plus_Jakarta_Sans({
+const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
@@ -23,9 +23,9 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
-      className={`${playfair.variable} ${plusJakarta.variable} h-full antialiased`}
+      className={`${playfair.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#FDFBF7] text-[#2C2523] font-sans">
+      <body className="min-h-full flex flex-col bg-[#FFF8F2] text-[#2B2B2B] font-sans">
         <Providers>{children}</Providers>
       </body>
     </html>
