@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Plus,
   Edit3,
@@ -12,8 +12,11 @@ import {
   Check,
   Scissors,
   Package,
+  ImagePlus,
+  Upload,
 } from "lucide-react";
 import AdminSearchFilterBar from "@/components/AdminSearchFilterBar";
+import LoginPage from "@/app/(public)/login/page";
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState([]);
@@ -35,7 +38,11 @@ export default function AdminProductsPage() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("Apparel");
-  const [image, setImage] = useState("");
+  const [image, setImage] = useState(""); // stored path/URL in DB
+  const [imageFile, setImageFile] = useState(null); // new file selected by admin
+  const [imagePreview, setImagePreview] = useState(""); // object URL for preview
+  const [imageDragging, setImageDragging] = useState(false);
+  const imageInputRef = useRef(null);
   const [stock, setStock] = useState("");
   const [customizable, setCustomizable] = useState(true);
 
@@ -45,6 +52,8 @@ export default function AdminProductsPage() {
     try {
       const res = await fetch("/api/products");
       const data = await res.json();
+      console.log(data);
+      
       if (data.success) {
         setProducts(data.products);
       } else {
@@ -74,6 +83,8 @@ export default function AdminProductsPage() {
     setPrice("");
     setCategory("Apparel");
     setImage("");
+    setImageFile(null);
+    setImagePreview("");
     setStock("10");
     setCustomizable(true);
     setError("");
@@ -87,10 +98,46 @@ export default function AdminProductsPage() {
     setPrice(product.price.toString());
     setCategory(product.category);
     setImage(product.image || "");
+    setImageFile(null);
+    setImagePreview(product.image || "");
     setStock(product.stock.toString());
     setCustomizable(product.customizable);
     setError("");
     setIsFormOpen(true);
+  };
+
+  // Handle image file selection (from input or drag-and-drop)
+  const handleImageFile = (file) => {
+    if (!file) return;
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowed.includes(file.type)) {
+      setError("Invalid image type. Use JPEG, PNG, WebP, or GIF.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be under 5 MB.");
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setError("");
+  };
+
+  const handleImageInputChange = (e) => {
+    handleImageFile(e.target.files?.[0] ?? null);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setImageDragging(false);
+    handleImageFile(e.dataTransfer.files?.[0] ?? null);
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview("");
+    setImage("");
+    if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
   const handleSave = async (e) => {
@@ -104,17 +151,36 @@ export default function AdminProductsPage() {
       return;
     }
 
-    const payload = {
-      name: name.trim(),
-      description: description.trim(),
-      price: parseFloat(price),
-      category: category.trim(),
-      image: image.trim() || undefined,
-      stock: parseInt(stock) || 0,
-      customizable: !!customizable,
-    };
-
     try {
+      // Step 1: Upload new image file if one was selected
+      let resolvedImage = image.trim() || undefined;
+      if (imageFile) {
+        const uploadForm = new FormData();
+        uploadForm.append("file", imageFile);
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadForm,
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) {
+          setError(uploadData.error || "Image upload failed.");
+          setFormLoading(false);
+          return;
+        }
+        resolvedImage = uploadData.path;
+      }
+
+      // Step 2: Save product with the resolved image path
+      const payload = {
+        name: name.trim(),
+        description: description.trim(),
+        price: parseFloat(price),
+        category: category.trim(),
+        image: resolvedImage,
+        stock: parseInt(stock) || 0,
+        customizable: !!customizable,
+      };
+
       const url = editingProduct
         ? `/api/products/${editingProduct.id}`
         : "/api/products";
@@ -449,14 +515,70 @@ export default function AdminProductsPage() {
 
                 <div className="col-span-2">
                   <label className="block text-xxs font-bold text-[#2C2523] uppercase mb-1">
-                    Image URL
+                    Product Image
                   </label>
+
+                  {/* Preview or drop zone */}
+                  {imagePreview ? (
+                    <div className="relative w-full h-44 rounded-xl overflow-hidden border border-[#EBE5E0] bg-[#FDFBF7] group">
+                      <img
+                        src={imagePreview}
+                        alt="Product preview"
+                        className="w-full h-full object-cover"
+                      />
+                      {/* Overlay on hover */}
+                      <div className="absolute inset-0 bg-[#2C2523]/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => imageInputRef.current?.click()}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 text-[#2C2523] text-[10px] font-bold rounded-lg hover:bg-white transition-colors cursor-pointer"
+                        >
+                          <Upload className="w-3 h-3" /> Change
+                        </button>
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/90 text-white text-[10px] font-bold rounded-lg hover:bg-red-500 transition-colors cursor-pointer"
+                        >
+                          <X className="w-3 h-3" /> Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => imageInputRef.current?.click()}
+                      onDragOver={(e) => { e.preventDefault(); setImageDragging(true); }}
+                      onDragLeave={() => setImageDragging(false)}
+                      onDrop={handleDrop}
+                      className={`w-full h-36 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${
+                        imageDragging
+                          ? "border-[#E0A996] bg-[#E0A996]/10"
+                          : "border-[#EBE5E0] bg-[#FDFBF7] hover:border-[#E0A996] hover:bg-[#E0A996]/5"
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                        imageDragging ? "bg-[#E0A996]/20" : "bg-[#F5EFEB]"
+                      }`}>
+                        <ImagePlus className={`w-5 h-5 transition-colors ${
+                          imageDragging ? "text-[#E0A996]" : "text-[#A0958F]"
+                        }`} />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs font-semibold text-[#4A3728]">
+                          {imageDragging ? "Drop to upload" : "Click or drag image here"}
+                        </p>
+                        <p className="text-[10px] text-[#A0958F] mt-0.5">JPEG, PNG, WebP, GIF · Max 5 MB</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Hidden file input */}
                   <input
-                    type="text"
-                    value={image}
-                    onChange={(e) => setImage(e.target.value)}
-                    placeholder="https://unsplash.com/... (image link)"
-                    className="w-full px-3 py-2.5 bg-[#FDFBF7] border border-[#EBE5E0] text-xs text-[#2C2523] rounded-xl focus:outline-none focus:border-[#E0A996]"
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={handleImageInputChange}
+                    className="hidden"
                   />
                 </div>
 

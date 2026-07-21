@@ -28,20 +28,16 @@ const FacebookIcon = ({ className = "w-5 h-5" }) => (
   </svg>
 );
 
-// ─── Real Facebook CDN images ────────────────────────────────────────────────
 const IMG_HERO = "/hero.jpg";
-  // "https://scontent.fcmb3-2.fna.fbcdn.net/v/t39.30808-6/732889190_122259144956131406_319818472927283947_n.png?stp=dst-png&cstp=mx851x315&ctp=s851x315&_nc_cat=103&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=cc71e4&_nc_eui2=AeF_5QvpG7cAnHF0Hj4MZbCKQT_Pe5PYfddBP897k9h9182aD7A3Q5WxUp5dUmd92nRd63srLTegZF4iGuBRCswH&_nc_ohc=Ykh6Vlqas3MQ7kNvwFoXs20&_nc_oc=AdqB1Ym-6Sh3mb1As6FAZ2R_37aoSJvT5C-1qOPZJGCeg8T6HLVKcKWhWlWF5OmZkz9a6O9D0LoiDbv5H9hKO-HH&_nc_zt=23&_nc_ht=scontent.fcmb3-2.fna&_nc_gid=4adXfWfuu1OmpqJzYYW8ug&_nc_ss=7b2a8&oh=00_AQCJ4fltK1HrGTBOvFHe2h3rBrxXzmPpvvvoEKQAg_13dQ&oe=6A5FB027";
-const IMG_CARDIGAN =
-  "https://scontent.fcmb12-1.fna.fbcdn.net/v/t39.30808-6/712267326_122256247076131406_7028798248786891449_n.jpg?stp=dst-jpg_tt6&cstp=mx720x960&ctp=s720x960&_nc_cat=100&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeHSQyC8jUW5m-OJBEeDcsng29WmPxvEjzHb1aY_G8SPMcmqnq8NbxQzIL9nI1horMEUjQ_3CSI8Y2iEIN6CtInq&_nc_ohc=WKKR-tXhD-oQ7kNvwFiTw_U&_nc_oc=AdrdsfJJTdVgUNRSlRq9nKA5T0T3fwhuTddEb0xawA1bsdyVJrCUjJoM2PvxmW2x6fdXKmJg0sSkia16chqIALdQ&_nc_zt=23&_nc_ht=scontent.fcmb12-1.fna&_nc_gid=pLIg72oc-uGQtJV6ppSscw&_nc_ss=7b2a8&oh=00_AQARJk3CMyTpoJ1Nt6cUxmzupTgIdHXqNGCgBEAwVAzn6w&oe=6A5FAB29";
-const IMG_TOTE =
-  "https://scontent.fcmb12-1.fna.fbcdn.net/v/t39.30808-6/746171372_122261158652131406_133466072502057137_n.jpg?stp=dst-jpg_tt6&cstp=mx720x960&ctp=s720x960&_nc_cat=109&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeGEXVUM-mIRuXNFe-YxwAUDPqHkaPd00qM-oeRo93TSow4XSMuWY0j5Y5TxxZzwOWL7_wCd4fKpMr8kqAIptgBO&_nc_ohc=dSc7pdo24dwQ7kNvwE7Dge_&_nc_oc=Adpog5jjJdaYFVuFCcoSWvUEBXIEiAVBHqFbKSXxvc5PCPxcgsSmEpP2zunPPo10390C-x7HiZBfdnzWukBQvE_j&_nc_zt=23&_nc_ht=scontent.fcmb12-1.fna&_nc_gid=TO5t92IuoCwAAlTwgKyg9g&_nc_ss=7b2a8&oh=00_AQDSbAT1ukzM2BARxyUNYbS5FyAC8BWwEQfbfuhVn8oRvw&oe=6A5FB7FE";
+const IMG_COMMUNITY = "/kit.png";
+const IMG_CARDIGAN = "/t.png";
+const IMG_TOTE = "/bag.png";
+const IMG_FLOWERS = "/flowers.png";
+const IMG_BEANIE = "/hat.png";
 
-const IMG_FLOWERS =
-  "https://scontent.fcmb3-2.fna.fbcdn.net/v/t39.30808-6/737075792_122259637562131406_4979094932434952090_n.jpg?stp=cp6_dst-jpg_tt6&cstp=mx720x960&ctp=s720x960&_nc_cat=100&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeFvDdGObAS9WdsRn8hRPiMdVyBsyeW8okdXIGzJ5byiR43LRbMdNLTftca6uFXJCpgIoLKxrc6UdfuXci5YF69W&_nc_ohc=Zg6sUT1rGKEQ7kNvwHNT17D&_nc_oc=AdqYzTVSDX8Emt2Zt9QO8SdH6dYBQfwCI3ICqMQZh4EyeZbZfefutuxDhr3podfIT245Gc3en5bTa_HG5k42sm1g&_nc_zt=23&_nc_ht=scontent.fcmb3-2.fna&_nc_gid=Cn-wB4Hz3osYzV9Fz4KQog&_nc_ss=7b2a8&oh=00_AQCPJ203_kgajKurZ47sxw6w9UnY19DjUJDHCWAbXJmomA&oe=6A5FBF0C";
-const IMG_BEANIE =
-  "https://scontent.fcmb11-3.fna.fbcdn.net/v/t39.30808-6/649970850_122246954552131406_1316847060158297406_n.jpg?stp=c0.169.1536.1536a_dst-jpg_tt6&cstp=mx1536x1536&ctp=s206x206&_nc_cat=109&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=50ad20&_nc_eui2=AeGkW4KkG8mwRA90aFfaSUMTowojHD4dIISjCiMcPh0ghCBNlH0paD4WvdA11bhxxgAYxn18ZAJjuji16W2L3Jx5&_nc_ohc=o0rdHe1t-kIQ7kNvwFy0Mtw&_nc_oc=AdqHJnzo-AEwHKJpFCApd5csx8SM0UhDQ8V2tphJ2_9BhnTKGrvBvxKmFe_beDJJaeRkt61QIBOfLTtram-uLjIY&_nc_zt=23&_nc_ht=scontent.fcmb11-3.fna&_nc_gid=50ZEdY4u4YAD3H-dQFh1UA&_nc_ss=7b2a8&oh=00_AQCm4j67459ZeG7M1yfZc2Y8PDD3HvJ9OK7YfeWxoPBGpg&oe=6A5FD455";
-// ─── Process Steps ──────────────────────────────────────────────────────────
 const FB_URL = "https://web.facebook.com/p/Crochet-with-dilru-61553942184584/";
+
+// ─── Process Steps ──────────────────────────────────────────────────────────
 
 // ─── Gallery data ────────────────────────────────────────────────────────────
 const GALLERY = [

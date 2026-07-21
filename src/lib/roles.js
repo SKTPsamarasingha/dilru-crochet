@@ -77,6 +77,7 @@ export const DEFAULT_ROLE_PERMISSIONS = {
 
 const SETTINGS_DOC = "rolePermissions";
 
+
 export async function getRolePermissions() {
   try {
     const snap = await getDoc(doc(db, "settings", SETTINGS_DOC));
