@@ -15,6 +15,7 @@ import {
   Shield,
 } from "lucide-react";
 import AdminSearchFilterBar from "@/components/AdminSearchFilterBar";
+import { useNotifications } from "@/components/NotificationProvider";
 
 const ROLE_GROUPS = [
   { key: "ALL", label: "All Users" },
@@ -26,6 +27,7 @@ const ROLE_GROUPS = [
 
 export default function AdminCustomersPage() {
   const { user: currentUser } = useAuth();
+  const { addToast, confirm } = useNotifications();
   const isSuperAdmin = currentUser?.role === "SUPER_ADMIN";
 
   const [users, setUsers] = useState([]);
@@ -133,16 +135,16 @@ export default function AdminCustomersPage() {
       const data = await res.json();
       if (data.success) {
         setSuccessMsg(`User role updated to ${newRole}!`);
-        // Update local state dynamically
         setUsers(
           users.map((u) => (u.id === userId ? { ...u, role: newRole } : u)),
         );
+        addToast(`Role updated to ${newRole}.`, "success");
         setTimeout(() => setSuccessMsg(""), 3000);
       } else {
-        alert(data.error || "Failed to change user role.");
+        addToast(data.error || "Failed to change user role.", "error");
       }
     } catch (err) {
-      alert("An error occurred while updating the role.");
+      addToast("An error occurred while updating the role.", "error");
     }
   };
 
@@ -186,8 +188,18 @@ export default function AdminCustomersPage() {
     }
   };
 
-  const handleDelete = async (userId) => {
-    if (!confirm("Are you sure you want to delete this user profile?")) return;
+  const handleDelete = async (userId, userRole) => {
+    const isProtectedRole = ["SUPER_ADMIN", "ADMIN", "EDITOR"].includes(
+      userRole,
+    );
+
+    if (isProtectedRole) {
+      addToast("Admin profiles are protected and cannot be deleted.", "warning");
+      return;
+    }
+
+    const ok = await confirm("Are you sure you want to delete this user profile?");
+    if (!ok) return;
 
     try {
       const res = await fetch(`/api/users/${userId}`, {
@@ -197,12 +209,13 @@ export default function AdminCustomersPage() {
       if (data.success) {
         setSuccessMsg("User profile deleted successfully.");
         setUsers(users.filter((u) => u.id !== userId));
+        addToast("User profile deleted successfully.", "success");
         setTimeout(() => setSuccessMsg(""), 3000);
       } else {
-        alert(data.error || "Failed to delete user.");
+        addToast(data.error || "Failed to delete user.", "error");
       }
     } catch (err) {
-      alert("An error occurred while deleting user.");
+      addToast("An error occurred while deleting user.", "error");
     }
   };
 
@@ -374,9 +387,16 @@ export default function AdminCustomersPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
-                        onClick={() => handleDelete(u.id)}
-                        className="p-1.5 border border-[#EBE5E0] hover:border-red-400 hover:bg-red-50 text-[#A0958F] hover:text-red-600 rounded-lg cursor-pointer transition-colors"
-                        title="Delete User"
+                        onClick={() => handleDelete(u.id, u.role)}
+                        disabled={["SUPER_ADMIN", "ADMIN", "EDITOR"].includes(
+                          u.role,
+                        )}
+                        className={`p-1.5 border border-[#EBE5E0] rounded-lg transition-colors ${["SUPER_ADMIN", "ADMIN", "EDITOR"].includes(u.role) ? "opacity-50 cursor-not-allowed" : "hover:border-red-400 hover:bg-red-50 text-[#A0958F] hover:text-red-600 cursor-pointer"}`}
+                        title={
+                          ["SUPER_ADMIN", "ADMIN", "EDITOR"].includes(u.role)
+                            ? "Protected admin profile"
+                            : "Delete User"
+                        }
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

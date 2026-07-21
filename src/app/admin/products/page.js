@@ -17,8 +17,10 @@ import {
 } from "lucide-react";
 import AdminSearchFilterBar from "@/components/AdminSearchFilterBar";
 import LoginPage from "@/app/(public)/login/page";
+import { useNotifications } from "@/components/NotificationProvider";
 
 export default function AdminProductsPage() {
+  const { addToast, confirm } = useNotifications();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -213,7 +215,8 @@ export default function AdminProductsPage() {
   };
 
   const handleDelete = async (productId) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
+    const ok = await confirm("Are you sure you want to delete this product?");
+    if (!ok) return;
 
     try {
       const res = await fetch(`/api/products/${productId}`, {
@@ -222,13 +225,14 @@ export default function AdminProductsPage() {
       const data = await res.json();
       if (data.success) {
         setSuccessMsg("Product deleted successfully!");
+        addToast("Product deleted successfully.", "success");
         fetchProducts();
         setTimeout(() => setSuccessMsg(""), 3000);
       } else {
-        alert(data.error || "Failed to delete product.");
+        addToast(data.error || "Failed to delete product.", "error");
       }
     } catch (err) {
-      alert("An error occurred while deleting.");
+      addToast("An error occurred while deleting.", "error");
     }
   };
 
