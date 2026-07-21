@@ -10,6 +10,7 @@
     "seed": "node scripts/seed.mjs"
   },
   "dependencies": {
+    "cloudinary": "^2.10.0",
     "firebase": "^12.15.0",
     "framer-motion": "^12.42.2",
     "jose": "^6.2.3",

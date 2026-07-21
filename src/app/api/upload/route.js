@@ -2,17 +2,36 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyAccessToken } from "@/lib/session";
 import { authorize } from "@/lib/roles";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { randomUUID } from "crypto";
+import cloudinary from "@/lib/cloudinary";
 
-const UPLOAD_DIR = join(process.cwd(), "public", "uploads", "products");
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
+/**
+ * Upload a buffer to Cloudinary and return the secure URL.
+ * Uses upload_stream wrapped in a Promise so it works with Node buffers.
+ */
+function uploadToCloudinary(buffer, mimeType) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "dilru-crochet/products",
+        resource_type: "image",
+        // Cloudinary will auto-optimise + convert to WebP for delivery
+        transformation: [{ quality: "auto", fetch_format: "auto" }],
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      },
+    );
+    stream.end(buffer);
+  });
+}
+
 export async function POST(request) {
   try {
-    // Auth check
+    // Auth check – only admins with manage_products permission
     const cookieStore = await cookies();
     const token = cookieStore.get("accessToken")?.value;
     const payload = await verifyAccessToken(token);
@@ -34,7 +53,7 @@ export async function POST(request) {
       );
     }
 
-    // Validate type
+    // Validate MIME type
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
         { success: false, error: "Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed." },
@@ -51,26 +70,11 @@ export async function POST(request) {
       );
     }
 
-    // Determine extension from MIME type
-    const extMap = {
-      "image/jpeg": "jpg",
-      "image/png": "png",
-      "image/webp": "webp",
-      "image/gif": "gif",
-    };
-    const ext = extMap[file.type];
-    const filename = `${randomUUID()}.${ext}`;
+    // Upload to Cloudinary
+    const result = await uploadToCloudinary(buffer, file.type);
 
-    // Ensure upload directory exists
-    await mkdir(UPLOAD_DIR, { recursive: true });
-
-    // Write file to disk
-    const filePath = join(UPLOAD_DIR, filename);
-    await writeFile(filePath, buffer);
-
-    // Return the public URL path
-    const publicPath = `/uploads/products/${filename}`;
-    return NextResponse.json({ success: true, path: publicPath });
+    // result.secure_url is the permanent HTTPS CDN URL stored in Firestore
+    return NextResponse.json({ success: true, path: result.secure_url });
   } catch (error) {
     console.error("Upload Error:", error);
     return NextResponse.json(
