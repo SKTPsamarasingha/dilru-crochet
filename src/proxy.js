@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyAccessToken, verifyRefreshToken, signAccessToken } from "@/lib/session";
 
-const ALLOWED_ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN", "EDITOR"];
+
 
 export async function proxy(request) {
   const { pathname } = request.nextUrl;
@@ -51,7 +51,7 @@ export async function proxy(request) {
 
     if (accessToken) {
       const payload = await verifyAccessToken(accessToken);
-      if (payload && ALLOWED_ADMIN_ROLES.includes(payload.role)) {
+      if (payload && payload.role !== "USER") {
         return NextResponse.next();
       }
     }
@@ -61,7 +61,7 @@ export async function proxy(request) {
     if (refreshToken) {
       const payload = await verifyRefreshToken(refreshToken);
       
-      if (payload && ALLOWED_ADMIN_ROLES.includes(payload.role)) {
+      if (payload && payload.role !== "USER") {
         const newPayload = {
           uid: payload.uid,
           email: payload.email,
@@ -86,7 +86,7 @@ export async function proxy(request) {
     }
 
     // If both tokens are invalid or role is not authorized, redirect to login
-    const loginUrl = new URL("/login", request.url);
+    const loginUrl = new URL("/admin-login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }

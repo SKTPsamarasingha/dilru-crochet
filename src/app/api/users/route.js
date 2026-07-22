@@ -1,8 +1,25 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, addDoc, doc, setDoc, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  doc,
+  setDoc,
+  query,
+  where,
+} from "firebase/firestore";
 import { verifyAccessToken } from "@/lib/session";
+import { clientSignUp } from "@/lib/auth-client";
+
+import { auth } from "@/lib/firebase";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  updateProfile,
+} from "firebase/auth";
 
 const SUPER_ADMIN_ROLE = "SUPER_ADMIN";
 
@@ -15,7 +32,7 @@ export async function GET() {
     if (!payload || payload.role !== SUPER_ADMIN_ROLE) {
       return NextResponse.json(
         { success: false, error: "Unauthorized: Super Admin access required" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -23,7 +40,7 @@ export async function GET() {
     const snapshot = await getDocs(usersCol);
     const usersList = snapshot.docs.map((docSnap) => ({
       id: docSnap.id,
-      ...docSnap.data()
+      ...docSnap.data(),
     }));
 
     // Sort users alphabetically by name
@@ -34,7 +51,7 @@ export async function GET() {
     console.error("List Users Error:", error);
     return NextResponse.json(
       { success: false, error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -48,17 +65,20 @@ export async function POST(request) {
     if (!payload || payload.role !== SUPER_ADMIN_ROLE) {
       return NextResponse.json(
         { success: false, error: "Unauthorized: Super Admin access required" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const body = await request.json();
-    const { email, name, role } = body;
+    const { email, name, role, password } = body;
 
-    if (!email || !name || !role) {
+    if (!email || !password || !name || !role) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields (email, name, role)" },
-        { status: 400 }
+        {
+          success: false,
+          error: "Missing required fields (email, name, role)",
+        },
+        { status: 400 },
       );
     }
 
@@ -69,32 +89,42 @@ export async function POST(request) {
 
     if (!existingSnap.empty) {
       return NextResponse.json(
-        { success: false, error: "A user with this email address already exists" },
-        { status: 409 }
+        {
+          success: false,
+          error: "A user with this email address already exists",
+        },
+        { status: 409 },
       );
     }
 
     // Pre-create user mapped role. It maps uid upon signup.
-    const docId = `user-pre-${Date.now()}`;
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password,
+    );
+
+    const userID = userCredential?.user.uid;
+
     const newUser = {
       email: email.toLowerCase().trim(),
       name: name.trim(),
       role: role.trim(),
-      uid: null, // Mapped when user registers via Firebase
-      createdAt: new Date().toISOString()
+      uid: userID,
+      createdAt: new Date().toISOString(),
     };
 
-    await setDoc(doc(db, "users", docId), newUser);
+    await setDoc(doc(db, "users", userID), newUser);
 
-    return NextResponse.json({ 
-      success: true, 
-      user: { id: docId, ...newUser } 
+    return NextResponse.json({
+      success: true,
+      user: { id: userID, ...newUser },
     });
   } catch (error) {
     console.error("Create User Error:", error);
     return NextResponse.json(
       { success: false, error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

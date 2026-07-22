@@ -14,9 +14,8 @@ export default async function AdminLayout({ children }) {
     user = await verifyAccessToken(token);
   }
 
-  const ALLOWED_ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN", "EDITOR"];
-  if (!user || !ALLOWED_ADMIN_ROLES.includes(user.role)) {
-    redirect("/login");
+  if (!user || user.role === "USER") {
+    redirect("/admin-login");
   }
 
   return (

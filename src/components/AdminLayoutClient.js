@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -22,15 +22,51 @@ export default function AdminLayoutClient({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const [per, setPer] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        const response = await fetch("/api/admin/permission");
+        const allPer = await response.json();
+        setPer(allPer);
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+      }
+    };
+
+    fetchPermissions();
+  }, []);
 
   const menuItems = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Products", href: "/admin/products", icon: ShoppingBag },
     { name: "Orders", href: "/admin/orders", icon: Receipt },
-    { name: "Customers", href: "/admin/customers", icon: Users },
+    { name: "Users", href: "/admin/users", icon: Users },
     { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
+
+  const userPermissions = per[user?.role] || [];
+
+  const visibleMenuItems = useMemo(() => {
+    // Super admin bypasses permission checks entirely
+    if (user?.role === "SUPER_ADMIN") {
+      return menuItems;
+    }
+
+    // "manage_products" -> "products", "manage_orders" -> "orders", etc.
+    const allowedKeys = userPermissions
+      .filter((p) => p.startsWith("manage"))
+      .map((p) => p.split("_")[1]);
+
+    return menuItems.filter(
+      (item) =>
+        item.name === "Dashboard" || // always visible if you have any access
+        allowedKeys.includes(item.name.toLowerCase()),
+    );
+  }, [user?.role, userPermissions]);
+
 
   const handleSignOut = async () => {
     await signOut();
@@ -52,7 +88,7 @@ export default function AdminLayoutClient({ children }) {
         </div>
 
         <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-          {menuItems.map((item) => {
+          {visibleMenuItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (
@@ -163,7 +199,7 @@ export default function AdminLayoutClient({ children }) {
             </div>
 
             <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-              {menuItems.map((item) => {
+              {visibleMenuItems.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
                 return (

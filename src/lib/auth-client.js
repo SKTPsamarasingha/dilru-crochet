@@ -1,9 +1,9 @@
 import { auth } from "./firebase";
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signOut as firebaseSignOut,
-  updateProfile
+  updateProfile,
 } from "firebase/auth";
 
 /**
@@ -11,13 +11,19 @@ import {
  */
 export async function clientSignUp(email, password, name) {
   // 1. Register user on Firebase Auth
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  const userCredential = await createUserWithEmailAndPassword(
+    auth,
+    email,
+    password,
+  );
   const user = userCredential.user;
 
   // 2. Update Firebase Auth display name profile
   if (name) {
     await updateProfile(user, { displayName: name });
   }
+
+  console.log(user.uid);
 
   // 3. Establish backend JWT and Firestore user record
   const res = await fetch("/api/auth/session", {
@@ -26,8 +32,8 @@ export async function clientSignUp(email, password, name) {
     body: JSON.stringify({
       uid: user.uid,
       email: user.email,
-      name: name || user.displayName || "Customer"
-    })
+      name: name || user.displayName || "Customer",
+    }),
   });
 
   const data = await res.json();
@@ -43,7 +49,11 @@ export async function clientSignUp(email, password, name) {
  */
 export async function clientSignIn(email, password) {
   // 1. Sign in via Firebase Auth
-  const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  const userCredential = await signInWithEmailAndPassword(
+    auth,
+    email,
+    password,
+  );
   const user = userCredential.user;
 
   // 2. Fetch/create backend JWT and fetch Firestore role mapping
@@ -53,8 +63,8 @@ export async function clientSignIn(email, password) {
     body: JSON.stringify({
       uid: user.uid,
       email: user.email,
-      name: user.displayName || "Customer"
-    })
+      name: user.displayName || "Customer",
+    }),
   });
 
   const data = await res.json();
@@ -78,7 +88,7 @@ export async function clientSignOut() {
 
   // 2. Delete cookies server-side
   const res = await fetch("/api/auth/logout", {
-    method: "POST"
+    method: "POST",
   });
 
   const data = await res.json();

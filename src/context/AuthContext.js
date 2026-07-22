@@ -9,7 +9,6 @@ import {
 } from "react";
 import { clientSignIn, clientSignUp, clientSignOut } from "@/lib/auth-client";
 
-const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN", "EDITOR"];
 
 const AuthContext = createContext(null);
 
@@ -119,7 +118,7 @@ export function AuthProvider({ children }) {
     fetchSession,
     fetchOrders,
     isAuthenticated: !!user,
-    isAdmin: user ? ADMIN_ROLES.includes(user.role) : false,
+    isAdmin: user ? user.role !== "USER" : false,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

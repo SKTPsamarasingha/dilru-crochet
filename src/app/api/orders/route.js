@@ -4,7 +4,7 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, addDoc, query, where } from "firebase/firestore";
 import { verifyAccessToken } from "@/lib/session";
 
-const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN", "EDITOR"];
+
 
 export async function GET() {
   try {
@@ -22,7 +22,7 @@ export async function GET() {
     const ordersCol = collection(db, "orders");
     let snapshot;
 
-    if (ADMIN_ROLES.includes(payload.role)) {
+    if (payload.role !== "USER") {
       snapshot = await getDocs(ordersCol);
     } else {
       const q = query(ordersCol, where("userId", "==", payload.uid));

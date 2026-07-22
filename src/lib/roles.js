@@ -1,7 +1,7 @@
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteField, updateDoc } from "firebase/firestore";
 
-export const ROLES = {
+export const CORE_ROLES = {
   USER: {
     key: "USER",
     label: "Customer",
@@ -76,7 +76,57 @@ export const DEFAULT_ROLE_PERMISSIONS = {
 };
 
 const SETTINGS_DOC = "rolePermissions";
+const CUSTOM_ROLES_DOC = "customRoles";
 
+export async function getCustomRoles() {
+  try {
+    const snap = await getDoc(doc(db, "settings", CUSTOM_ROLES_DOC));
+    if (snap.exists()) {
+      return snap.data();
+    }
+  } catch (e) {
+    console.error("Failed to load custom roles:", e);
+  }
+  return {};
+}
+
+export async function getAllRoles() {
+  const customRoles = await getCustomRoles();
+  return { ...CORE_ROLES, ...customRoles };
+}
+
+export async function createCustomRole(key, label, description) {
+  const normalizedKey = key.toUpperCase().replace(/\s+/g, "_");
+  if (CORE_ROLES[normalizedKey]) {
+    throw new Error("Cannot overwrite core roles.");
+  }
+  
+  const customRolesRef = doc(db, "settings", CUSTOM_ROLES_DOC);
+  await setDoc(
+    customRolesRef, 
+    { [normalizedKey]: { key: normalizedKey, label, description } }, 
+    { merge: true }
+  );
+  
+  return normalizedKey;
+}
+
+export async function deleteCustomRole(key) {
+  if (CORE_ROLES[key]) {
+    throw new Error("Cannot delete core roles.");
+  }
+  
+  const customRolesRef = doc(db, "settings", CUSTOM_ROLES_DOC);
+  await updateDoc(customRolesRef, {
+    [key]: deleteField()
+  });
+  
+  // Clean up permissions for this role
+  const permissionsRef = doc(db, "settings", SETTINGS_DOC);
+  await updateDoc(permissionsRef, {
+    [key]: deleteField()
+  });
+}
 
 export async function getRolePermissions() {
   try {
@@ -103,5 +153,3 @@ export async function authorize(role, permission) {
   const rolePermissions = await getRolePermissions();
   return roleHasPermission(rolePermissions, role, permission);
 }
-
-export const ADMIN_PANEL_ROLES = ["EDITOR", "ADMIN", "SUPER_ADMIN"];
